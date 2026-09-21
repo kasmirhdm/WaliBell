@@ -92,7 +92,7 @@ public class MainActivity extends Activity {
             int top=0,bottom=0;
             if(Build.VERSION.SDK_INT>=30){Insets bars=insets.getInsets(WindowInsets.Type.systemBars());top=bars.top;bottom=bars.bottom;}
             else{top=insets.getSystemWindowInsetTop();bottom=insets.getSystemWindowInsetBottom();}
-            root.setPadding(0,top,0,0);nav.setPadding(dp(4),dp(4),dp(4),Math.max(dp(8),bottom+dp(8)));return insets;
+            root.setPadding(0,top,0,bottom);nav.setPadding(dp(4),dp(4),dp(4),dp(8));nav.getLayoutParams().height=dp(68);nav.requestLayout();return insets;
         });
         setContentView(root);root.requestApplyInsets();showPage(0);
     }
@@ -164,14 +164,14 @@ public class MainActivity extends Activity {
         clearContent();content.addView(header("Perangkat","Pengaturan keluaran suara"),new LinearLayout.LayoutParams(-1,dp(78)));
         LinearLayout out=card();TextView ot=tv("Output Suara",17);ot.setTypeface(Typeface.DEFAULT,Typeface.BOLD);ot.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_volume,0,0,0);ot.setCompoundDrawablePadding(8);out.addView(ot,new LinearLayout.LayoutParams(-1,dp(32)));
         RadioGroup rg=new RadioGroup(this);String[] opts={"Speaker HP (bawaan)","Bluetooth Speaker","Perangkat USB / OTG"};for(String x:opts){RadioButton rb=new RadioButton(this);rb.setText(x);rb.setTextSize(15);rb.setTextColor(DARK);rg.addView(rb,new RadioGroup.LayoutParams(-1,dp(38)));if(x.startsWith("Speaker"))rb.setChecked(true);}out.addView(rg,new LinearLayout.LayoutParams(-1,dp(120)));
-        LinearLayout.LayoutParams op=new LinearLayout.LayoutParams(-1,dp(165));op.setMargins(dp(8),dp(8),dp(8),0);content.addView(out,op);
-        LinearLayout vol=card();vol.addView(tv("Volume Bel",17),new LinearLayout.LayoutParams(-1,dp(30)));SeekBar sb=new SeekBar(this);sb.setProgress(80);vol.addView(sb,new LinearLayout.LayoutParams(-1,dp(42)));LinearLayout.LayoutParams vp=new LinearLayout.LayoutParams(-1,80);vp.setMargins(dp(8),dp(6),dp(8),0);content.addView(vol,vp);
-        LinearLayout note=card();TextView nt=tv("Notifikasi\nTampilkan notifikasi saat bel diputar",15);nt.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_bell,0,0,0);nt.setCompoundDrawablePadding(8);note.addView(nt,new LinearLayout.LayoutParams(-1,dp(58)));Switch sw=new Switch(this);sw.setChecked(true);sw.setText("Aktif");note.addView(sw,new LinearLayout.LayoutParams(-1,dp(42)));LinearLayout.LayoutParams np=new LinearLayout.LayoutParams(-1,100);np.setMargins(dp(8),dp(6),dp(8),0);content.addView(note,np);
+        LinearLayout.LayoutParams op=new LinearLayout.LayoutParams(-1,dp(180));op.setMargins(dp(8),dp(8),dp(8),0);content.addView(out,op);
+        LinearLayout vol=card();vol.addView(tv("Volume Bel",17),new LinearLayout.LayoutParams(-1,dp(30)));SeekBar sb=new SeekBar(this);sb.setProgress(80);vol.addView(sb,new LinearLayout.LayoutParams(-1,dp(42)));LinearLayout.LayoutParams vp=new LinearLayout.LayoutParams(-1,dp(82));vp.setMargins(dp(8),dp(6),dp(8),0);content.addView(vol,vp);
+        LinearLayout note=card();TextView nt=tv("Notifikasi\nTampilkan notifikasi saat bel diputar",15);nt.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_bell,0,0,0);nt.setCompoundDrawablePadding(8);note.addView(nt,new LinearLayout.LayoutParams(-1,dp(58)));Switch sw=new Switch(this);sw.setChecked(true);sw.setText("Aktif");note.addView(sw,new LinearLayout.LayoutParams(-1,dp(42)));LinearLayout.LayoutParams np=new LinearLayout.LayoutParams(-1,dp(112));np.setMargins(dp(8),dp(6),dp(8),0);content.addView(note,np);
     }
 
     void showAboutPage(){
         clearContent();content.addView(header("Tentang","Informasi aplikasi"),new LinearLayout.LayoutParams(-1,dp(78)));
-        LinearLayout box=card();box.setGravity(Gravity.CENTER);TextView n=tv("WaliBell",28);n.setTypeface(Typeface.DEFAULT,Typeface.BOLD);n.setGravity(Gravity.CENTER);box.addView(n,new LinearLayout.LayoutParams(-1,48));TextView v=tv("Versi 3.8\n\nAplikasi bel sekolah otomatis\nMudah, Praktis, dan Andal\n\nKasmir, S.Pd\nKepala Sekolah\nSMPN 1 Sungai Batang\nIndragiri Hilir - Riau",16);v.setGravity(Gravity.CENTER);box.addView(v,new LinearLayout.LayoutParams(-1,dp(210)));LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-1,dp(275));bp.setMargins(dp(8),dp(8),dp(8),0);content.addView(box,bp);
+        LinearLayout box=card();box.setGravity(Gravity.CENTER);TextView n=tv("WaliBell",28);n.setTypeface(Typeface.DEFAULT,Typeface.BOLD);n.setGravity(Gravity.CENTER);box.addView(n,new LinearLayout.LayoutParams(-1,48));TextView v=tv("Versi 3.8\n\nAplikasi bel sekolah otomatis\nMudah, Praktis, dan Andal\n\nKasmir, S.Pd\nKepala Sekolah\nSMPN 1 Sungai Batang\nIndragiri Hilir - Riau",16);v.setGravity(Gravity.CENTER);box.addView(v,new LinearLayout.LayoutParams(-1,dp(210)));LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-1,dp(300));bp.setMargins(dp(8),dp(8),dp(8),0);content.addView(box,bp);
         TextView quote=tv("“Disiplin dimulai dari waktu”",18);quote.setTextColor(GREEN);quote.setGravity(Gravity.CENTER);content.addView(quote,new LinearLayout.LayoutParams(-1,dp(58)));
     }
 
@@ -180,12 +180,12 @@ public class MainActivity extends Activity {
         for(Schedule s:schedules){
             LinearLayout row=card();row.setOrientation(LinearLayout.HORIZONTAL);row.setGravity(Gravity.CENTER_VERTICAL);
             LinearLayout inf=new LinearLayout(this);inf.setOrientation(LinearLayout.VERTICAL);
-            TextView name=tv(s.name,16);name.setTypeface(Typeface.DEFAULT,Typeface.BOLD);inf.addView(name,new LinearLayout.LayoutParams(-1,32));
-            TextView a=tv(s.time+"  •  "+s.audioName,13);a.setTextColor(Color.rgb(90,105,100));inf.addView(a,new LinearLayout.LayoutParams(-1,30));
-            row.addView(inf,new LinearLayout.LayoutParams(0,66,1));
+            TextView name=tv(s.name,16);name.setTypeface(Typeface.DEFAULT,Typeface.BOLD);inf.addView(name,new LinearLayout.LayoutParams(-1,dp(38)));
+            TextView a=tv(s.time+"  •  "+s.audioName,13);a.setTextColor(Color.rgb(90,105,100));inf.addView(a,new LinearLayout.LayoutParams(-1,dp(28)));
+            row.addView(inf,new LinearLayout.LayoutParams(0,dp(70),1));
             Button play=actionButton("▶");play.setOnClickListener(v->preview(s));row.addView(play,new LinearLayout.LayoutParams(dp(48),dp(40)));
             Button edit=actionButton("Suara");edit.setOnClickListener(v->chooseAudio(s.id));row.addView(edit,new LinearLayout.LayoutParams(dp(72),dp(40)));
-            LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(-1,dp(72));rp.setMargins(dp(8),dp(4),dp(8),0);list.addView(row,rp);
+            LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(-1,dp(80));rp.setMargins(dp(8),dp(4),dp(8),0);list.addView(row,rp);
         }
     }
 
