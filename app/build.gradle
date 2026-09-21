@@ -1,4 +1,4 @@
 plugins { id 'com.android.application' }
 android { namespace 'com.walinet.walibell'; compileSdk 36
- defaultConfig { applicationId 'com.walinet.walibell'; minSdk 23; targetSdk 35; versionCode 44; versionName '3.14' }
+ defaultConfig { applicationId 'com.walinet.walibell'; minSdk 23; targetSdk 35; versionCode 50; versionName '4.0' }
 }
