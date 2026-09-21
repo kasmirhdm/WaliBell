@@ -75,6 +75,7 @@ public class MainActivity extends ComponentActivity {
                     AlarmManager am=(AlarmManager)getSystemService(ALARM_SERVICE);
                     if(am!=null && am.canScheduleExactAlarms()){
                         waitingForExactAlarmSettings=false;
+                        BellReceiver.clearExactAlarmPermissionNotification(this);
                         BellReceiver.rescheduleAll(this);
                         requestBatteryOptimizationPermission();
                     }else{
@@ -259,6 +260,7 @@ public class MainActivity extends ComponentActivity {
         }
 
         waitingForExactAlarmSettings=false;
+        BellReceiver.clearExactAlarmPermissionNotification(this);
         requestBatteryOptimizationPermission();
     }
 
