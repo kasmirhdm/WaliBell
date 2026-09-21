@@ -118,6 +118,13 @@ public class BellReceiver extends BroadcastReceiver {
         }
     }
 
+    static void clearExactAlarmPermissionNotification(Context c){
+        try{
+            NotificationManager nm=(NotificationManager)c.getSystemService(Context.NOTIFICATION_SERVICE);
+            if(nm!=null)nm.cancel(99001);
+        }catch(Exception ignored){}
+    }
+
     static int dayBit(int calendarDay){
         return 1 << ((calendarDay + 5) % 7);
     }
