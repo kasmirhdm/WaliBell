@@ -94,6 +94,14 @@ public class BellReceiver extends BroadcastReceiver {
                             am.cancel(pi);
                             pi.cancel();
                         }
+                        PendingIntent backupPi=PendingIntent.getBroadcast(
+                            c,id*10+d+200000,old,
+                            PendingIntent.FLAG_NO_CREATE|PendingIntent.FLAG_IMMUTABLE
+                        );
+                        if(backupPi!=null){
+                            am.cancel(backupPi);
+                            backupPi.cancel();
+                        }
                     }
                 }catch(Exception e){
                     Log.w(TAG,"Gagal membatalkan alarm lama",e);
