@@ -298,24 +298,15 @@ public class MainActivity extends ComponentActivity {
         android.os.PowerManager pm=(android.os.PowerManager)getSystemService(POWER_SERVICE);
         if(pm!=null && !pm.isIgnoringBatteryOptimizations(getPackageName())){
             waitingForBatterySettings=true;
-            new AlertDialog.Builder(this)
-                .setTitle("Izinkan WaliBell tetap aktif")
-                .setMessage(
-                    "Agar bel tidak tertunda ketika HP terkunci, izinkan WaliBell " +
-                    "mengabaikan optimasi baterai. Pengaturan ini membantu sistem " +
-                    "mempertahankan kemampuan WaliBell menjalankan jadwal di latar belakang."
-                )
-                .setPositiveButton("Izinkan",(d,w)->{
-                    try{
-                        Intent in=new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
-                        in.setData(Uri.parse("package:"+getPackageName()));
-                        startActivity(in);
-                    }catch(Exception e){
-                        openAppSettings();
-                    }
-                })
-                .setNegativeButton("Nanti",null)
-                .show();
+            // Open the system battery-optimization exemption page directly.
+            // This is intentionally not just an informational dialog.
+            try{
+                Intent in=new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+                in.setData(Uri.parse("package:"+getPackageName()));
+                startActivity(in);
+            }catch(Exception e){
+                openAppSettings();
+            }
             return;
         }
 
