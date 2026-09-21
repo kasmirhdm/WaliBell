@@ -228,21 +228,11 @@ public class MainActivity extends ComponentActivity {
             new AlertDialog.Builder(this)
                 .setTitle("Izinkan Alarm & Pengingat")
                 .setMessage(
-                    "WaliBell membutuhkan akses Alarm & Pengingat agar bel berbunyi " +
-                    "tepat sesuai jadwal walaupun layar terkunci atau HP sedang masuk Doze Mode."
+                    "WaliBell membutuhkan akses khusus Alarm & Pengingat agar bel dapat " +
+                    "berbunyi tepat sesuai jadwal saat layar terkunci. Tekan Buka Pengaturan, " +
+                    "lalu aktifkan WaliBell jika pilihan tersebut tersedia."
                 )
-                .setPositiveButton("Buka Pengaturan",(d,w)->{
-                    try{
-                        Intent in=new Intent(
-                            Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
-                            Uri.parse("package:"+getPackageName())
-                        );
-                        startActivity(in);
-                    }catch(Exception e){
-                        try{startActivity(new Intent(Settings.ACTION_SETTINGS));}
-                        catch(Exception ignored){}
-                    }
-                })
+                .setPositiveButton("Buka Pengaturan",(d,w)->openExactAlarmSettings())
                 .setNegativeButton("Nanti",null)
                 .show();
             return;
@@ -250,6 +240,53 @@ public class MainActivity extends ComponentActivity {
 
         waitingForExactAlarmSettings=false;
         requestBatteryOptimizationPermission();
+    }
+
+    void openExactAlarmSettings(){
+        boolean opened=false;
+        try{
+            Intent in=new Intent(
+                Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
+                Uri.parse("package:"+getPackageName())
+            );
+            if(in.resolveActivity(getPackageManager())!=null){
+                startActivity(in);
+                opened=true;
+            }
+        }catch(Exception ignored){}
+
+        if(opened)return;
+
+        // Some vendor Settings implementations do not resolve the package-specific
+        // intent. Try the generic exact-alarm page before falling back to app info.
+        try{
+            Intent generic=new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM);
+            if(generic.resolveActivity(getPackageManager())!=null){
+                startActivity(generic);
+                opened=true;
+            }
+        }catch(Exception ignored){}
+
+        if(opened)return;
+
+        try{
+            Intent appInfo=new Intent(
+                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                Uri.parse("package:"+getPackageName())
+            );
+            startActivity(appInfo);
+            new AlertDialog.Builder(this)
+                .setTitle("Cari akses khusus")
+                .setMessage(
+                    "Jika halaman Alarm & Pengingat tidak terbuka otomatis, " +
+                    "buka menu Akses khusus aplikasi pada Pengaturan lalu cari " +
+                    "Alarm & Pengingat dan aktifkan WaliBell."
+                )
+                .setPositiveButton("OK",null)
+                .show();
+        }catch(Exception ignored){
+            try{startActivity(new Intent(Settings.ACTION_SETTINGS));}catch(Exception ignored2){}
+        }
     }
 
     void requestBatteryOptimizationPermission(){
@@ -315,6 +352,25 @@ public class MainActivity extends ComponentActivity {
             if(in!=null){startActivity(in);return;}
         }catch(Exception ignored){}
         openAppSettings();
+    }
+
+    void showExactAlarmStatus(){
+        if(Build.VERSION.SDK_INT<31){
+            Toast.makeText(this,"Versi Android ini tidak memerlukan akses khusus Alarm & Pengingat.",Toast.LENGTH_LONG).show();
+            return;
+        }
+        AlarmManager am=(AlarmManager)getSystemService(ALARM_SERVICE);
+        boolean ok=am!=null && am.canScheduleExactAlarms();
+        if(ok){
+            Toast.makeText(this,"Alarm & Pengingat WaliBell sudah aktif.",Toast.LENGTH_LONG).show();
+        }else{
+            new AlertDialog.Builder(this)
+                .setTitle("Alarm & Pengingat belum aktif")
+                .setMessage("Akses khusus WaliBell belum aktif. Buka pengaturan untuk mengaktifkannya.")
+                .setPositiveButton("Buka Pengaturan",(d,w)->openExactAlarmSettings())
+                .setNegativeButton("Tutup",null)
+                .show();
+        }
     }
 
     @Override protected void onResume(){
