@@ -12,11 +12,21 @@ public class BellReceiver extends BroadcastReceiver {
     @Override public void onReceive(Context c, Intent i){
         int raw=i.getIntExtra("raw",0);
         String uri=i.getStringExtra("uri");
+        String alarmKey=i.getStringExtra("alarmKey");
+
+        // Primary and backup exact alarms can target the same moment. Use one
+        // stable key so a late/double delivery never plays the same bell twice.
+        if(alarmKey!=null&&!alarmKey.isEmpty()&&!markAlarmDelivered(c,alarmKey)){
+            Log.i(TAG,"Duplikat alarm diabaikan: "+alarmKey);
+            rescheduleAll(c);
+            return;
+        }
+
         logHistory(c,i.getStringExtra("name"),i.getStringExtra("time"));
 
-        // The exact alarm itself is the background trigger. Starting the
-        // foreground service from an exact alarm is an Android-supported
-        // exemption from the normal background-FGS launch restriction.
+        // Starting the foreground service from an exact alarm is an Android
+        // background-FGS exemption. BellService acquires a PARTIAL_WAKE_LOCK
+        // while the sound is actually playing.
         try{
             Intent service=new Intent(c,BellService.class);
             service.putExtra("raw",raw);
@@ -29,6 +39,17 @@ public class BellReceiver extends BroadcastReceiver {
 
         // The alarm is one-shot; immediately schedule the next occurrence.
         rescheduleAll(c);
+    }
+
+    static boolean markAlarmDelivered(Context c,String key){
+        android.content.SharedPreferences sp=c.getSharedPreferences("alarm_delivery",0);
+        long now=System.currentTimeMillis();
+        long last=sp.getLong(key,0);
+        // Backup/primary delivery of the same scheduled occurrence is treated
+        // as one event for up to 10 minutes.
+        if(last>0 && now-last<10*60*1000L)return false;
+        sp.edit().putLong(key,now).apply();
+        return true;
     }
 
     static void logHistory(Context c,String name,String time){
@@ -130,6 +151,8 @@ public class BellReceiver extends BroadcastReceiver {
                 in.putExtra("uri",uri);
                 in.putExtra("name",p[2]);
                 in.putExtra("time",p[1]);
+                String alarmKey=id+"_"+best.getTimeInMillis();
+                in.putExtra("alarmKey",alarmKey);
 
                 PendingIntent pi=PendingIntent.getBroadcast(
                     c,requestCode,in,
@@ -156,9 +179,40 @@ public class BellReceiver extends BroadcastReceiver {
                 );
                 AlarmManager.AlarmClockInfo info=
                     new AlarmManager.AlarmClockInfo(best.getTimeInMillis(),showPi);
-                am.setAlarmClock(info,pi);
 
-                Log.i(TAG,"EXACT ALARM terjadwal: "+p[2]+" "+p[1]+" -> "+best.getTime());
+                // PRIMARY: AlarmClock is the most visible exact alarm and may
+                // wake the device from low-power idle.
+                try{
+                    am.setAlarmClock(info,pi);
+                    Log.i(TAG,"PRIMARY AlarmClock terjadwal: "+p[2]+" "+p[1]+" -> "+best.getTime());
+                }catch(SecurityException e){
+                    Log.e(TAG,"AlarmClock ditolak; mencoba backup setExactAndAllowWhileIdle",e);
+                }
+
+                // BACKUP: use a separate PendingIntent so the fallback can
+                // coexist with the primary. BellReceiver de-duplicates both
+                // deliveries using alarmKey.
+                Intent backupIn=new Intent(c,BellReceiver.class);
+                backupIn.setAction("com.walinet.walibell.BELL_BACKUP_"+id+"_"+dayIndex);
+                backupIn.putExtra("raw",raw);
+                backupIn.putExtra("uri",uri);
+                backupIn.putExtra("name",p[2]);
+                backupIn.putExtra("time",p[1]);
+                backupIn.putExtra("alarmKey",alarmKey);
+                PendingIntent backupPi=PendingIntent.getBroadcast(
+                    c,requestCode+200000,backupIn,
+                    PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE
+                );
+                try{
+                    am.setExactAndAllowWhileIdle(
+                        AlarmManager.RTC_WAKEUP,best.getTimeInMillis(),backupPi
+                    );
+                    Log.i(TAG,"BACKUP ExactAndAllowWhileIdle terjadwal: "+p[2]+" "+p[1]);
+                }catch(SecurityException e){
+                    Log.e(TAG,"Backup exact alarm ditolak",e);
+                }
+
+                Log.i(TAG,"EXACT ALARM selesai dijadwalkan: "+p[2]+" "+p[1]+" -> "+best.getTime());
             }catch(SecurityException e){
                 Log.e(TAG,"SecurityException saat menjadwalkan exact alarm",e);
             }catch(Exception e){
