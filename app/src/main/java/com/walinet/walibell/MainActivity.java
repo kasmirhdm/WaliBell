@@ -268,7 +268,7 @@ public class MainActivity extends Activity {
                 else {
                     Schedule s=schedules.get(editingId);
                     s.audioName="Belum ada suara"; s.audioUri=null; s.rawId=0;
-                    save(); render(); BellReceiver.rescheduleAll(this);
+                    save(); showPage(currentPage); BellReceiver.rescheduleAll(this);
                 }
             }).show();
     }
@@ -313,7 +313,7 @@ public class MainActivity extends Activity {
                     s.audioName=recordingName;
                     s.audioUri=Uri.fromFile(new File(recordPath)).toString();
                     s.rawId=0;
-                    save(); render(); BellReceiver.rescheduleAll(this);
+                    save(); showPage(currentPage); BellReceiver.rescheduleAll(this);
                 })
                 .setOnCancelListener(d->{try{recorder.stop();recorder.release();}catch(Exception ignored){}})
                 .show();
@@ -339,7 +339,7 @@ public class MainActivity extends Activity {
             try{getContentResolver().takePersistableUriPermission(u,Intent.FLAG_GRANT_READ_URI_PERMISSION);}catch(Exception ignored){}
             Schedule s=schedules.get(editingId);
             s.audioName="Audio dari HP"; s.audioUri=u.toString(); s.rawId=0;
-            save(); render(); BellReceiver.rescheduleAll(this);
+            save(); showPage(currentPage); BellReceiver.rescheduleAll(this);
         }
     }
 
