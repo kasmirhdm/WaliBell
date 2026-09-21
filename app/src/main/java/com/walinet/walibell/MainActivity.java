@@ -376,16 +376,21 @@ public class MainActivity extends Activity {
 
     void showAboutPage(){
         clearContent();content.addView(header("Tentang","Informasi aplikasi"),new LinearLayout.LayoutParams(-1,dp(78)));
-        LinearLayout box=card();box.setGravity(Gravity.CENTER);TextView n=tv("WaliBell",28);n.setTypeface(Typeface.DEFAULT,Typeface.BOLD);n.setGravity(Gravity.CENTER);box.addView(n,new LinearLayout.LayoutParams(-1,48));TextView v=tv("Versi 4.0\n\nAplikasi bel sekolah otomatis\nMudah, Praktis, dan Andal\n\nKasmir, S.Pd\nKepala Sekolah\nSMPN 1 Sungai Batang\nIndragiri Hilir - Riau",16);v.setGravity(Gravity.CENTER);box.addView(v,new LinearLayout.LayoutParams(-1,dp(210)));LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-1,dp(300));bp.setMargins(dp(8),dp(8),dp(8),0);content.addView(box,bp);
-        TextView quote=tv("“Disiplin dimulai dari waktu”",18);quote.setTextColor(GREEN);quote.setGravity(Gravity.CENTER);content.addView(quote,new LinearLayout.LayoutParams(-1,dp(58)));
+        LinearLayout page=new LinearLayout(this);page.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout box=card();box.setGravity(Gravity.CENTER);
+        TextView n=tv("WaliBell",28);n.setTypeface(Typeface.create("sans-serif-medium",Typeface.BOLD));n.setGravity(Gravity.CENTER);n.setTextColor(themeColor());box.addView(n,new LinearLayout.LayoutParams(-1,dp(48)));
+        TextView v=tv("Versi 4.0\n\nAplikasi bel sekolah otomatis\nMudah, Praktis, dan Andal\n\nKasmir, S.Pd\nKepala Sekolah\nSMPN 1 Sungai Batang\nIndragiri Hilir - Riau",16);v.setGravity(Gravity.CENTER);box.addView(v,new LinearLayout.LayoutParams(-1,dp(210)));
+        LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-1,dp(300));bp.setMargins(dp(8),dp(8),dp(8),0);page.addView(box,bp);
+        TextView quote=tv("“Disiplin dimulai dari waktu”",18);quote.setTextColor(themeColor());quote.setGravity(Gravity.CENTER);page.addView(quote,new LinearLayout.LayoutParams(-1,dp(58)));
         LinearLayout tools=card();TextView th=tv("Tampilan & Alat",17);th.setTypeface(Typeface.create("sans-serif-medium",Typeface.BOLD));tools.addView(th,new LinearLayout.LayoutParams(-1,dp(32)));
-        Button themeBtn=actionButton("Mode Gelap / Terang");themeBtn.setOnClickListener(v->toggleDarkMode());tools.addView(themeBtn,new LinearLayout.LayoutParams(-1,dp(44)));
-        Button colorBtn=actionButton("Warna Tema");colorBtn.setOnClickListener(v->chooseTheme());tools.addView(colorBtn,new LinearLayout.LayoutParams(-1,dp(44)));
-        Button kioskBtn=actionButton("Mode Layar Penuh / Kiosk");kioskBtn.setOnClickListener(v->showKioskPage());tools.addView(kioskBtn,new LinearLayout.LayoutParams(-1,dp(44)));
-        Button backupBtn=actionButton("Backup Data Jadwal & Suara");backupBtn.setOnClickListener(v->backupData());tools.addView(backupBtn,new LinearLayout.LayoutParams(-1,dp(44)));
-        Button restoreBtn=actionButton("Restore Data");restoreBtn.setOnClickListener(v->restoreData());tools.addView(restoreBtn,new LinearLayout.LayoutParams(-1,dp(44)));
-        LinearLayout.LayoutParams tp=new LinearLayout.LayoutParams(-1,dp(246));tp.setMargins(dp(8),dp(8),dp(8),dp(8));content.addView(tools,tp);
-
+        Button themeBtn=actionButton("Mode Gelap / Terang");themeBtn.setOnClickListener(v2->toggleDarkMode());tools.addView(themeBtn,new LinearLayout.LayoutParams(-1,dp(44)));
+        Button colorBtn=actionButton("Warna Tema");colorBtn.setOnClickListener(v2->chooseTheme());tools.addView(colorBtn,new LinearLayout.LayoutParams(-1,dp(44)));
+        Button kioskBtn=actionButton("Mode Layar Penuh / Kiosk");kioskBtn.setOnClickListener(v2->showKioskPage());tools.addView(kioskBtn,new LinearLayout.LayoutParams(-1,dp(44)));
+        Button backupBtn=actionButton("Backup Data Jadwal & Suara");backupBtn.setOnClickListener(v2->backupData());tools.addView(backupBtn,new LinearLayout.LayoutParams(-1,dp(44)));
+        Button restoreBtn=actionButton("Restore Data");restoreBtn.setOnClickListener(v2->restoreData());tools.addView(restoreBtn,new LinearLayout.LayoutParams(-1,dp(44)));
+        LinearLayout.LayoutParams tp=new LinearLayout.LayoutParams(-1,dp(246));tp.setMargins(dp(8),dp(8),dp(8),dp(8));page.addView(tools,tp);
+        TextView tip=tv("Backup menyimpan jadwal, hari, dan file suara ke satu paket ZIP.",13);tip.setPadding(dp(12),dp(4),dp(12),dp(12));page.addView(tip,new LinearLayout.LayoutParams(-1,dp(42)));
+        ScrollView sv=new ScrollView(this);sv.setFillViewport(true);sv.addView(page);content.addView(sv,new LinearLayout.LayoutParams(-1,0,1));
     }
 
     void showHistoryPage(){
