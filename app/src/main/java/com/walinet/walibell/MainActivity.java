@@ -52,6 +52,19 @@ public class MainActivity extends Activity {
         b.setGravity(Gravity.CENTER);b.setPadding(4,0,4,0);b.setBackground(bg(Color.rgb(231,243,240)));
         b.setMinHeight(0);b.setMinWidth(0);b.setStateListAnimator(null);return b;
     }
+    Button iconButton(String text,int icon){
+        Button b=actionButton(text);
+        b.setCompoundDrawablesWithIntrinsicBounds(icon,0,0,0);
+        b.setCompoundDrawablePadding(6);
+        return b;
+    }
+    LinearLayout navItem(String label,int icon,int page){
+        LinearLayout item=new LinearLayout(this);item.setOrientation(LinearLayout.VERTICAL);item.setGravity(Gravity.CENTER);
+        ImageView iv=new ImageView(this);iv.setImageResource(icon);iv.setContentDescription(label);
+        item.addView(iv,new LinearLayout.LayoutParams(24,24));
+        TextView t=tv(label,11);t.setGravity(Gravity.CENTER);item.addView(t,new LinearLayout.LayoutParams(-1,24));
+        item.setOnClickListener(v->showPage(page));return item;
+    }
     TextView title(String text){
         TextView v=tv(text,26);v.setTypeface(Typeface.DEFAULT,Typeface.BOLD);v.setTextColor(Color.WHITE);return v;
     }
@@ -68,8 +81,9 @@ public class MainActivity extends Activity {
         root.addView(content,new LinearLayout.LayoutParams(-1,0,1));
 
         LinearLayout nav=new LinearLayout(this);nav.setOrientation(LinearLayout.HORIZONTAL);nav.setGravity(Gravity.CENTER);nav.setPadding(4,6,4,10);
-        String[] labels={"⌂\nBeranda","▣\nJadwal","♫\nSuara","⚙\nPerangkat","ⓘ\nTentang"};
-        for(int i=0;i<labels.length;i++){final int page=i;Button b=actionButton(labels[i]);b.setTextSize(11);b.setGravity(Gravity.CENTER);b.setPadding(0,2,0,0);nav.addView(b,new LinearLayout.LayoutParams(0,62,1));b.setOnClickListener(v->showPage(page));}
+        int[] navIcons={R.drawable.ic_home,R.drawable.ic_schedule,R.drawable.ic_music,R.drawable.ic_devices,R.drawable.ic_info};
+        String[] labels={"Beranda","Jadwal","Suara","Perangkat","Tentang"};
+        for(int i=0;i<labels.length;i++)nav.addView(navItem(labels[i],navIcons[i],i),new LinearLayout.LayoutParams(0,58,1));
         root.addView(nav,new LinearLayout.LayoutParams(-1,-2));
         getWindow().setStatusBarColor(Color.WHITE);getWindow().setNavigationBarColor(Color.WHITE);
         if(Build.VERSION.SDK_INT>=26)getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR|View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
@@ -102,7 +116,7 @@ public class MainActivity extends Activity {
         LinearLayout upcoming=card();TextView ut=tv("Jadwal berikutnya",15);ut.setTypeface(Typeface.DEFAULT,Typeface.BOLD);upcoming.addView(ut,new LinearLayout.LayoutParams(-1,30));
         upcoming.addView(tv(next==null?"Belum ada jadwal":next.name+"\n"+next.time,20),new LinearLayout.LayoutParams(-1,70));
         LinearLayout.LayoutParams up=new LinearLayout.LayoutParams(-1,112);up.setMargins(12,12,12,0);content.addView(upcoming,up);
-        Button manual=actionButton("▶   Bel Manual");manual.setTextColor(Color.WHITE);manual.setBackground(bg(Color.rgb(13,148,136)));manual.setOnClickListener(v->{if(next!=null)preview(next);});
+        Button manual=iconButton("Bel Manual",R.drawable.ic_bell);manual.setTextColor(Color.WHITE);manual.setBackground(bg(Color.rgb(13,148,136)));manual.setOnClickListener(v->{if(next!=null)preview(next);});
         LinearLayout.LayoutParams mp=new LinearLayout.LayoutParams(-1,56);mp.setMargins(12,12,12,0);content.addView(manual,mp);
         LinearLayout status=card();TextView st=tv("Status aplikasi",16);st.setTypeface(Typeface.DEFAULT,Typeface.BOLD);status.addView(st,new LinearLayout.LayoutParams(-1,30));status.addView(tv("Aktif  •  Semua jadwal berjalan",14),new LinearLayout.LayoutParams(-1,30));
         LinearLayout.LayoutParams sp=new LinearLayout.LayoutParams(-1,76);sp.setMargins(12,12,12,0);content.addView(status,sp);
@@ -120,22 +134,22 @@ public class MainActivity extends Activity {
         for(Schedule s:schedules){
             LinearLayout row=card();row.setOrientation(LinearLayout.HORIZONTAL);row.setGravity(Gravity.CENTER_VERTICAL);
             TextView name=tv("♫  "+s.name+"\n     "+s.audioName,14);row.addView(name,new LinearLayout.LayoutParams(0,68,1));
-            Button play=actionButton("▶");play.setOnClickListener(v->preview(s));row.addView(play,new LinearLayout.LayoutParams(54,48));
+            Button play=iconButton("",R.drawable.ic_play);play.setOnClickListener(v->preview(s));row.addView(play,new LinearLayout.LayoutParams(54,48));
             Button b=actionButton("Suara");b.setOnClickListener(v->chooseAudio(s.id));row.addView(b,new LinearLayout.LayoutParams(76,48));
             LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(-1,78);rp.setMargins(10,6,10,0);box.addView(row,rp);
         }
-        Button add=actionButton("+  Tambah Suara Baru");add.setTextColor(Color.WHITE);add.setBackground(bg(Color.rgb(13,148,136)));add.setOnClickListener(v->{if(!schedules.isEmpty())chooseAudio(schedules.get(0).id);});
+        Button add=iconButton("Tambah Suara Baru",R.drawable.ic_add);add.setTextColor(Color.WHITE);add.setBackground(bg(Color.rgb(13,148,136)));add.setOnClickListener(v->{if(!schedules.isEmpty())chooseAudio(schedules.get(0).id);});
         LinearLayout.LayoutParams ap=new LinearLayout.LayoutParams(-1,54);ap.setMargins(12,12,12,12);box.addView(add,ap);
         ScrollView sv=new ScrollView(this);sv.addView(box);content.addView(sv,new LinearLayout.LayoutParams(-1,0,1));
     }
 
     void showDevicePage(){
         clearContent();content.addView(header("Perangkat","Pengaturan keluaran suara"),new LinearLayout.LayoutParams(-1,92));
-        LinearLayout out=card();TextView ot=tv("Output Suara",17);ot.setTypeface(Typeface.DEFAULT,Typeface.BOLD);out.addView(ot,new LinearLayout.LayoutParams(-1,36));
+        LinearLayout out=card();TextView ot=tv("Output Suara",17);ot.setTypeface(Typeface.DEFAULT,Typeface.BOLD);ot.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_volume,0,0,0);ot.setCompoundDrawablePadding(8);out.addView(ot,new LinearLayout.LayoutParams(-1,36));
         RadioGroup rg=new RadioGroup(this);String[] opts={"Speaker HP (bawaan)","Bluetooth Speaker","Perangkat USB / OTG"};for(String x:opts){RadioButton rb=new RadioButton(this);rb.setText(x);rb.setTextSize(15);rb.setTextColor(DARK);rg.addView(rb,new RadioGroup.LayoutParams(-1,42));if(x.startsWith("Speaker"))rb.setChecked(true);}out.addView(rg,new LinearLayout.LayoutParams(-1,140));
         LinearLayout.LayoutParams op=new LinearLayout.LayoutParams(-1,190);op.setMargins(12,12,12,0);content.addView(out,op);
         LinearLayout vol=card();vol.addView(tv("Volume Bel",17),new LinearLayout.LayoutParams(-1,34));SeekBar sb=new SeekBar(this);sb.setProgress(80);vol.addView(sb,new LinearLayout.LayoutParams(-1,48));LinearLayout.LayoutParams vp=new LinearLayout.LayoutParams(-1,95);vp.setMargins(12,10,12,0);content.addView(vol,vp);
-        LinearLayout note=card();TextView nt=tv("Notifikasi\nTampilkan notifikasi saat bel diputar",15);note.addView(nt,new LinearLayout.LayoutParams(-1,64));Switch sw=new Switch(this);sw.setChecked(true);sw.setText("Aktif");note.addView(sw,new LinearLayout.LayoutParams(-1,48));LinearLayout.LayoutParams np=new LinearLayout.LayoutParams(-1,120);np.setMargins(12,10,12,0);content.addView(note,np);
+        LinearLayout note=card();TextView nt=tv("Notifikasi\nTampilkan notifikasi saat bel diputar",15);nt.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_bell,0,0,0);nt.setCompoundDrawablePadding(8);note.addView(nt,new LinearLayout.LayoutParams(-1,64));Switch sw=new Switch(this);sw.setChecked(true);sw.setText("Aktif");note.addView(sw,new LinearLayout.LayoutParams(-1,48));LinearLayout.LayoutParams np=new LinearLayout.LayoutParams(-1,120);np.setMargins(12,10,12,0);content.addView(note,np);
     }
 
     void showAboutPage(){
