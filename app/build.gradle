@@ -1,4 +1,8 @@
 plugins { id 'com.android.application' }
+dependencies {
+    implementation 'androidx.activity:activity:1.10.1'
+}
+
 android { namespace 'com.walinet.walibell'; compileSdk 36
- defaultConfig { applicationId 'com.walinet.walibell'; minSdk 23; targetSdk 35; versionCode 51; versionName '4.1' }
+ defaultConfig { applicationId 'com.walinet.walibell'; minSdk 23; targetSdk 35; versionCode 52; versionName '4.2' }
 }
