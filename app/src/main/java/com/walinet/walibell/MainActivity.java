@@ -126,7 +126,23 @@ public class MainActivity extends Activity {
     void showSchedulePage(){
         clearContent();content.addView(header("Jadwal Bel","Atur waktu dan suara untuk setiap bel"),new LinearLayout.LayoutParams(-1,dp(78)));
         list=new LinearLayout(this);list.setOrientation(LinearLayout.VERTICAL);ScrollView sv=new ScrollView(this);sv.setFillViewport(true);sv.addView(list);
-        content.addView(sv,new LinearLayout.LayoutParams(-1,0,1));render();
+        content.addView(sv,new LinearLayout.LayoutParams(-1,0,1));
+        Button add=iconButton("Tambah Jadwal",R.drawable.ic_add);add.setTextColor(Color.WHITE);add.setTextSize(14);add.setBackground(bg(Color.rgb(13,148,136)));add.setOnClickListener(v->addSchedule());
+        LinearLayout.LayoutParams ap=new LinearLayout.LayoutParams(-1,dp(48));ap.setMargins(dp(8),dp(6),dp(8),dp(8));content.addView(add,ap);render();
+    }
+
+    void addSchedule(){
+        LinearLayout form=new LinearLayout(this);form.setOrientation(LinearLayout.VERTICAL);form.setPadding(dp(4),dp(4),dp(4),0);
+        EditText name=new EditText(this);name.setHint("Nama bel, misalnya Upacara");form.addView(name,new LinearLayout.LayoutParams(-1,dp(52)));
+        EditText time=new EditText(this);time.setHint("Waktu (HH:mm), misalnya 13:00");time.setInputType(2);form.addView(time,new LinearLayout.LayoutParams(-1,dp(52)));
+        new AlertDialog.Builder(this).setTitle("Tambah Jadwal Bel").setView(form).setPositiveButton("Simpan",(d,w)->{
+            String n=name.getText().toString().trim(), t=time.getText().toString().trim();
+            if(n.isEmpty()) n="Jadwal Baru";
+            if(!t.matches("([01]\\d|2[0-3]):[0-5]\\d")){Toast.makeText(this,"Format waktu harus HH:mm, contoh 13:00",Toast.LENGTH_LONG).show();return;}
+            int id=0;for(Schedule s:schedules)id=Math.max(id,s.id+1);
+            schedules.add(new Schedule(id,t,n,"Belum ada suara",null,0));
+            save();BellReceiver.rescheduleAll(this);showPage(1);
+        }).setNegativeButton("Batal",null).show();
     }
 
     void showSoundPage(){
@@ -175,9 +191,10 @@ public class MainActivity extends Activity {
 
     void chooseAudio(int id){
         editingId=id;
-        new AlertDialog.Builder(this).setTitle("Suara untuk "+schedules.get(id).name)
+        Schedule selected=null;for(Schedule x:schedules)if(x.id==id){selected=x;break;}if(selected==null)return;
+        new AlertDialog.Builder(this).setTitle("Suara untuk "+selected.name)
         .setItems(new String[]{"Pilih file audio dari HP","Rekam suara sendiri","Hapus suara"},(d,w)->{
-            if(w==0)pick();else if(w==1)record();else{Schedule s=schedules.get(editingId);s.audioName="Belum ada suara";s.audioUri=null;s.rawId=0;save();showPage(currentPage);BellReceiver.rescheduleAll(this);}
+            if(w==0)pick();else if(w==1)record();else{Schedule s=null;for(Schedule x:schedules)if(x.id==editingId){s=x;break;}if(s==null)return;s.audioName="Belum ada suara";s.audioUri=null;s.rawId=0;save();showPage(currentPage);BellReceiver.rescheduleAll(this);}
         }).show();
     }
 
@@ -209,7 +226,7 @@ public class MainActivity extends Activity {
     }
     @Override protected void onActivityResult(int r,int c,Intent d){
         super.onActivityResult(r,c,d);
-        if(r==PICK_AUDIO&&c==RESULT_OK&&d!=null&&d.getData()!=null){Uri u=d.getData();try{getContentResolver().takePersistableUriPermission(u,Intent.FLAG_GRANT_READ_URI_PERMISSION);}catch(Exception ignored){}Schedule s=schedules.get(editingId);s.audioName="Audio dari HP";s.audioUri=u.toString();s.rawId=0;save();showPage(currentPage);BellReceiver.rescheduleAll(this);}
+        if(r==PICK_AUDIO&&c==RESULT_OK&&d!=null&&d.getData()!=null){Uri u=d.getData();try{getContentResolver().takePersistableUriPermission(u,Intent.FLAG_GRANT_READ_URI_PERMISSION);}catch(Exception ignored){}Schedule s=null;for(Schedule x:schedules)if(x.id==editingId){s=x;break;}if(s==null)return;s.audioName="Audio dari HP";s.audioUri=u.toString();s.rawId=0;save();showPage(currentPage);BellReceiver.rescheduleAll(this);}
     }
     void save(){getSharedPreferences("schedule",0).edit().putString("data",serialize()).apply();}
     String serialize(){StringBuilder b=new StringBuilder();for(Schedule s:schedules)b.append(s.id).append('|').append(s.time).append('|').append(s.name).append('|').append(s.audioName).append('|').append(s.audioUri==null?"":s.audioUri).append('|').append(s.rawId).append('\n');return b.toString();}
