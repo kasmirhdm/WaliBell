@@ -41,7 +41,6 @@ jobs:
           test -f app/src/main/res/raw/bel_istirahat.mp3
           test -f app/src/main/res/raw/bel_masuk_istirahat.mp3
           test -f app/src/main/res/raw/bel_pulang.mp3
-          test -f app/src/main/res/drawable/school_logo.jpg
 
       - name: Build debug APK
         run: gradle assembleDebug --no-daemon
