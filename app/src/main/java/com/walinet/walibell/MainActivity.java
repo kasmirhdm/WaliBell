@@ -24,8 +24,8 @@ public class MainActivity extends Activity {
     String recordPath;
     String[] names={"Masuk","Pelajaran 1","Istirahat","Masuk Setelah Istirahat","Pulang"};
     String[] times={"07:00","08:00","10:10","10:30","12:30"};
-    int[] raws={R.raw.bel_masuk,R.raw.bel_pelajaran,R.raw.bel_istirahat,R.raw.bel_masuk_istirahat,R.raw.bel_pulang};
-    String[] builtinNames={"bel_masuk.mp3","bel_pelajaran.mp3","bel_istirahat.mp3","bel_masuk_istirahat.mp3","bel_pulang.mp3"};
+    int[] raws={0,0,0,0,0};
+    String[] builtinNames={};
 
     @Override public void onCreate(Bundle b){super.onCreate(b); load(); build(); BellReceiver.rescheduleAll(this);}
 
@@ -37,7 +37,7 @@ public class MainActivity extends Activity {
                 try{String[] p=line.split("\|",-1); if(p.length>=6)schedules.add(new Schedule(Integer.parseInt(p[0]),p[1],p[2],p[3],p[4].isEmpty()?null:p[4],Integer.parseInt(p[5])));}catch(Exception ignored){}
             }
         }
-        if(schedules.isEmpty()) for(int i=0;i<names.length;i++) schedules.add(new Schedule(i,times[i],names[i],builtinNames[i],null,raws[i]));
+        if(schedules.isEmpty()) for(int i=0;i<names.length;i++) schedules.add(new Schedule(i,times[i],names[i],"Belum ada suara",null,0));
     }
 
     TextView tv(String s,int z){TextView v=new TextView(this);v.setText(s);v.setTextSize(z);v.setTextColor(Color.rgb(23,51,43));v.setGravity(Gravity.CENTER_VERTICAL);return v;}
@@ -75,7 +75,7 @@ public class MainActivity extends Activity {
 
     void builtins(){
         new AlertDialog.Builder(this).setTitle("Pilih suara bawaan").setItems(builtinNames,(d,w)->{
-            Schedule s=schedules.get(editingId); s.audioName=builtinNames[w]; s.audioUri=null; s.rawId=raws[w]; save(); render(); BellReceiver.rescheduleAll(this);
+            Schedule s=schedules.get(editingId); s.audioName=builtinNames[w]; s.audioUri=null; s.rawId=0; save(); render(); BellReceiver.rescheduleAll(this);
         }).show();
     }
 
@@ -101,6 +101,7 @@ public class MainActivity extends Activity {
 
     void preview(Schedule s){
         try{
+            if(s.rawId==0 && (s.audioUri==null || s.audioUri.isEmpty())) { Toast.makeText(this,"Belum ada suara. Silakan pilih atau rekam suara.",Toast.LENGTH_SHORT).show(); return; }
             MediaPlayer p=s.rawId!=0?MediaPlayer.create(this,s.rawId):MediaPlayer.create(this,Uri.parse(s.audioUri));
             if(p==null){Toast.makeText(this,"Audio tidak dapat diputar",Toast.LENGTH_SHORT).show();return;}
             p.setOnCompletionListener(MediaPlayer::release); p.start();
