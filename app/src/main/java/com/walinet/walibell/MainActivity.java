@@ -194,7 +194,7 @@ public class MainActivity extends Activity {
     }
 
     void editSchedule(int id){
-        Schedule target=null;for(Schedule s:schedules)if(s.id==id){target=s;break;}if(target==null)return;
+        Schedule found=null;for(Schedule s:schedules)if(s.id==id){found=s;break;}if(found==null)return;final Schedule target=found;
         LinearLayout form=new LinearLayout(this);form.setOrientation(LinearLayout.VERTICAL);form.setPadding(dp(4),dp(4),dp(4),0);
         EditText name=new EditText(this);name.setText(target.name);name.setHint("Nama bel");form.addView(name,new LinearLayout.LayoutParams(-1,dp(52)));
         EditText time=new EditText(this);time.setText(target.time);time.setHint("Waktu HH:mm");time.setInputType(2);form.addView(time,new LinearLayout.LayoutParams(-1,dp(52)));
@@ -207,7 +207,7 @@ public class MainActivity extends Activity {
     }
 
     void deleteSchedule(int id){
-        Schedule target=null;for(Schedule s:schedules)if(s.id==id){target=s;break;}if(target==null)return;
+        Schedule found=null;for(Schedule s:schedules)if(s.id==id){found=s;break;}if(found==null)return;final Schedule target=found;
         new AlertDialog.Builder(this).setTitle("Hapus Jadwal").setMessage("Hapus jadwal \"" + target.name + "\"?").setPositiveButton("Hapus",(d,w)->{
             schedules.remove(target);save();BellReceiver.rescheduleAll(this);showPage(1);
         }).setNegativeButton("Batal",null).show();
