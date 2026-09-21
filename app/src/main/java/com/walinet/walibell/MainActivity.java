@@ -17,6 +17,9 @@ import android.net.Uri;
 import android.os.*;
 import android.view.*;
 import android.widget.*;
+import androidx.activity.ComponentActivity;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -28,7 +31,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-public class MainActivity extends Activity {
+public class MainActivity extends ComponentActivity {
     static final int PICK_AUDIO=701, RECORD_AUDIO=702, BACKUP_CREATE=703, RESTORE_OPEN=704;
     static final int PAGE_HOME=0, PAGE_SCHEDULE=1, PAGE_SOUND=2, PAGE_HISTORY=3, PAGE_DEVICE=4, PAGE_ABOUT=5;
     static final int GREEN=Color.rgb(15,118,110), DARK=Color.rgb(6,78,68);
@@ -42,17 +45,35 @@ public class MainActivity extends Activity {
     int editingId=-1,currentPage=1;
     MediaRecorder recorder;
     String recordPath;
+
+    // Permission flow: notification -> exact alarm -> battery optimization.
+    ActivityResultLauncher<String> notificationPermissionLauncher;
+    boolean protectionFlowStarted=false;
+    boolean protectionIntroShown=false;
+    boolean waitingForExactAlarmSettings=false;
+    boolean waitingForBatterySettings=false;
     int dp(float v){ return (int)(v*getResources().getDisplayMetrics().density+0.5f); }
     String[] names={"Masuk","Pelajaran 1","Istirahat","Masuk Setelah Istirahat","Pulang"};
     String[] times={"07:00","08:00","10:10","10:30","12:30"};
 
     @Override public void onCreate(Bundle b){
         super.onCreate(b);
+
+        notificationPermissionLauncher=registerForActivityResult(
+            new ActivityResultContracts.RequestPermission(),
+            granted -> {
+                // Whether granted or denied, continue to the exact-alarm check.
+                requestExactAlarmPermission();
+            }
+        );
+
         load();
         build();
         BellReceiver.rescheduleAll(this);
         startBellService();
-        new Handler().postDelayed(this::checkSystemProtections,700);
+
+        // Explain the purpose before asking for system access.
+        new Handler().postDelayed(this::showProtectionExplanation,700);
     }
 
     void load(){
@@ -165,37 +186,103 @@ public class MainActivity extends Activity {
         }catch(Exception ignored){}
     }
 
-    void checkSystemProtections(){
-        if(Build.VERSION.SDK_INT>=23){
-            android.os.PowerManager pm=(android.os.PowerManager)getSystemService(POWER_SERVICE);
-            if(pm!=null&&!pm.isIgnoringBatteryOptimizations(getPackageName())){
-                new AlertDialog.Builder(this).setTitle("Izinkan WaliBell berjalan di latar belakang")
-                    .setMessage("Agar bel tetap berbunyi saat layar terkunci atau aplikasi ditutup, izinkan WaliBell mengabaikan optimasi baterai.")
-                    .setPositiveButton("Izinkan",(d,w)->{
-                        try{
-                            Intent in=new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
-                            in.setData(Uri.parse("package:"+getPackageName()));startActivity(in);
-                        }catch(Exception e){openAppSettings();}
-                    }).setNegativeButton("Nanti",null).show();
-                return;
-            }
-        }
-        if(Build.VERSION.SDK_INT>=31){
-            AlarmManager am=(AlarmManager)getSystemService(ALARM_SERVICE);
-            if(am!=null&&!am.canScheduleExactAlarms()){
-                new AlertDialog.Builder(this).setTitle("Izinkan alarm tepat waktu")
-                    .setMessage("WaliBell memerlukan izin alarm tepat agar bel berbunyi sesuai jadwal.")
-                    .setPositiveButton("Buka Pengaturan",(d,w)->{
-                        try{startActivity(new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,Uri.parse("package:"+getPackageName())));}
-                        catch(Exception e){startActivity(new Intent(Settings.ACTION_SETTINGS));}
-                    }).setNegativeButton("Nanti",null).show();
-                return;
-            }
-        }
-        if(Build.VERSION.SDK_INT>=33&&checkSelfPermission("android.permission.POST_NOTIFICATIONS")!=PackageManager.PERMISSION_GRANTED){
-            requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"},911);
+    void showProtectionExplanation(){
+        if(protectionIntroShown)return;
+        protectionIntroShown=true;
+
+        new AlertDialog.Builder(this)
+            .setTitle("WaliBell perlu izin sistem")
+            .setMessage(
+                "Agar bel dapat berbunyi otomatis tepat pada waktunya saat HP terkunci, " +
+                "WaliBell memerlukan tiga pengaturan sistem:\\n\\n" +
+                "• Notifikasi — untuk status WaliBell di latar belakang.\\n" +
+                "• Alarm & Pengingat — agar jadwal bel dapat dipicu tepat waktu meskipun HP masuk Doze.\\n" +
+                "• Abaikan optimasi baterai — mengurangi risiko sistem menunda atau menghentikan pekerjaan WaliBell."
+            )
+            .setPositiveButton("Lanjutkan",(d,w)->{
+                protectionFlowStarted=true;
+                requestNotificationPermission();
+            })
+            .setNegativeButton("Nanti",null)
+            .show();
+    }
+
+    void requestNotificationPermission(){
+        if(Build.VERSION.SDK_INT>=33 &&
+           checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED){
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
             return;
         }
+        requestExactAlarmPermission();
+    }
+
+    void requestExactAlarmPermission(){
+        if(Build.VERSION.SDK_INT<31){
+            requestBatteryOptimizationPermission();
+            return;
+        }
+
+        AlarmManager am=(AlarmManager)getSystemService(ALARM_SERVICE);
+        if(am!=null && !am.canScheduleExactAlarms()){
+            waitingForExactAlarmSettings=true;
+            new AlertDialog.Builder(this)
+                .setTitle("Izinkan Alarm & Pengingat")
+                .setMessage(
+                    "WaliBell membutuhkan akses Alarm & Pengingat agar bel berbunyi " +
+                    "tepat sesuai jadwal walaupun layar terkunci atau HP sedang masuk Doze Mode."
+                )
+                .setPositiveButton("Buka Pengaturan",(d,w)->{
+                    try{
+                        Intent in=new Intent(
+                            Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
+                            Uri.parse("package:"+getPackageName())
+                        );
+                        startActivity(in);
+                    }catch(Exception e){
+                        try{startActivity(new Intent(Settings.ACTION_SETTINGS));}
+                        catch(Exception ignored){}
+                    }
+                })
+                .setNegativeButton("Nanti",null)
+                .show();
+            return;
+        }
+
+        waitingForExactAlarmSettings=false;
+        requestBatteryOptimizationPermission();
+    }
+
+    void requestBatteryOptimizationPermission(){
+        if(Build.VERSION.SDK_INT<23){
+            showAutostartGuideIfNeeded();
+            return;
+        }
+
+        android.os.PowerManager pm=(android.os.PowerManager)getSystemService(POWER_SERVICE);
+        if(pm!=null && !pm.isIgnoringBatteryOptimizations(getPackageName())){
+            waitingForBatterySettings=true;
+            new AlertDialog.Builder(this)
+                .setTitle("Izinkan WaliBell tetap aktif")
+                .setMessage(
+                    "Agar bel tidak tertunda ketika HP terkunci, izinkan WaliBell " +
+                    "mengabaikan optimasi baterai. Pengaturan ini membantu sistem " +
+                    "mempertahankan kemampuan WaliBell menjalankan jadwal di latar belakang."
+                )
+                .setPositiveButton("Izinkan",(d,w)->{
+                    try{
+                        Intent in=new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+                        in.setData(Uri.parse("package:"+getPackageName()));
+                        startActivity(in);
+                    }catch(Exception e){
+                        openAppSettings();
+                    }
+                })
+                .setNegativeButton("Nanti",null)
+                .show();
+            return;
+        }
+
+        waitingForBatterySettings=false;
         showAutostartGuideIfNeeded();
     }
 
@@ -233,6 +320,17 @@ public class MainActivity extends Activity {
     @Override protected void onResume(){
         super.onResume();
         try{BellReceiver.rescheduleAll(this);startBellService();}catch(Exception ignored){}
+
+        // Returning from Android Settings continues the permission sequence.
+        if(protectionFlowStarted){
+            if(waitingForExactAlarmSettings){
+                waitingForExactAlarmSettings=false;
+                requestExactAlarmPermission();
+            }else if(waitingForBatterySettings){
+                waitingForBatterySettings=false;
+                requestBatteryOptimizationPermission();
+            }
+        }
     }
 
     void showPage(int page){
