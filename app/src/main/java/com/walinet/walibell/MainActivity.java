@@ -62,8 +62,8 @@ public class MainActivity extends Activity {
     LinearLayout navItem(String label,int icon,int page){
         LinearLayout item=new LinearLayout(this);item.setOrientation(LinearLayout.VERTICAL);item.setGravity(Gravity.CENTER);
         ImageView iv=new ImageView(this);iv.setImageResource(icon);iv.setContentDescription(label);
-        item.addView(iv,new LinearLayout.LayoutParams(dp(24),dp(24)));
-        TextView t=tv(label,11);t.setGravity(Gravity.CENTER);item.addView(t,new LinearLayout.LayoutParams(-1,dp(22)));
+        item.addView(iv,new LinearLayout.LayoutParams(dp(22),dp(22)));
+        TextView t=tv(label,11);t.setGravity(Gravity.CENTER);item.addView(t,new LinearLayout.LayoutParams(-1,dp(20)));
         item.setOnClickListener(v->showPage(page));return item;
     }
     TextView title(String text){
@@ -81,18 +81,18 @@ public class MainActivity extends Activity {
         content=new LinearLayout(this);content.setOrientation(LinearLayout.VERTICAL);content.setBackgroundColor(Color.WHITE);
         root.addView(content,new LinearLayout.LayoutParams(-1,0,1));
 
-        LinearLayout nav=new LinearLayout(this);nav.setOrientation(LinearLayout.HORIZONTAL);nav.setGravity(Gravity.CENTER);nav.setPadding(4,6,4,10);
+        LinearLayout nav=new LinearLayout(this);nav.setOrientation(LinearLayout.HORIZONTAL);nav.setGravity(Gravity.CENTER);nav.setPadding(dp(4),dp(4),dp(4),dp(4));
         int[] navIcons={R.drawable.ic_home,R.drawable.ic_schedule,R.drawable.ic_music,R.drawable.ic_devices,R.drawable.ic_info};
         String[] labels={"Beranda","Jadwal","Suara","Perangkat","Tentang"};
-        for(int i=0;i<labels.length;i++)nav.addView(navItem(labels[i],navIcons[i],i),new LinearLayout.LayoutParams(0,58,1));
-        root.addView(nav,new LinearLayout.LayoutParams(-1,dp(68)));
+        for(int i=0;i<labels.length;i++)nav.addView(navItem(labels[i],navIcons[i],i),new LinearLayout.LayoutParams(0,dp(52),1));
+        root.addView(nav,new LinearLayout.LayoutParams(-1,dp(62)));
         getWindow().setStatusBarColor(Color.WHITE);getWindow().setNavigationBarColor(Color.WHITE);
         if(Build.VERSION.SDK_INT>=26)getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR|View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
         root.setOnApplyWindowInsetsListener((v,insets)->{
             int top=0,bottom=0;
             if(Build.VERSION.SDK_INT>=30){Insets bars=insets.getInsets(WindowInsets.Type.systemBars());top=bars.top;bottom=bars.bottom;}
             else{top=insets.getSystemWindowInsetTop();bottom=insets.getSystemWindowInsetBottom();}
-            root.setPadding(0,top,0,bottom);nav.setPadding(dp(4),dp(4),dp(4),dp(8));nav.getLayoutParams().height=dp(68);nav.requestLayout();return insets;
+            root.setPadding(0,top,0,bottom);nav.setPadding(dp(4),dp(2),dp(4),dp(2));nav.getLayoutParams().height=dp(62);nav.requestLayout();return insets;
         });
         setContentView(root);root.requestApplyInsets();showPage(0);
     }
@@ -171,7 +171,7 @@ public class MainActivity extends Activity {
 
     void showAboutPage(){
         clearContent();content.addView(header("Tentang","Informasi aplikasi"),new LinearLayout.LayoutParams(-1,dp(78)));
-        LinearLayout box=card();box.setGravity(Gravity.CENTER);TextView n=tv("WaliBell",28);n.setTypeface(Typeface.DEFAULT,Typeface.BOLD);n.setGravity(Gravity.CENTER);box.addView(n,new LinearLayout.LayoutParams(-1,48));TextView v=tv("Versi 3.8\n\nAplikasi bel sekolah otomatis\nMudah, Praktis, dan Andal\n\nKasmir, S.Pd\nKepala Sekolah\nSMPN 1 Sungai Batang\nIndragiri Hilir - Riau",16);v.setGravity(Gravity.CENTER);box.addView(v,new LinearLayout.LayoutParams(-1,dp(210)));LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-1,dp(300));bp.setMargins(dp(8),dp(8),dp(8),0);content.addView(box,bp);
+        LinearLayout box=card();box.setGravity(Gravity.CENTER);TextView n=tv("WaliBell",28);n.setTypeface(Typeface.DEFAULT,Typeface.BOLD);n.setGravity(Gravity.CENTER);box.addView(n,new LinearLayout.LayoutParams(-1,48));TextView v=tv("Versi 3.11\n\nAplikasi bel sekolah otomatis\nMudah, Praktis, dan Andal\n\nKasmir, S.Pd\nKepala Sekolah\nSMPN 1 Sungai Batang\nIndragiri Hilir - Riau",16);v.setGravity(Gravity.CENTER);box.addView(v,new LinearLayout.LayoutParams(-1,dp(210)));LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-1,dp(300));bp.setMargins(dp(8),dp(8),dp(8),0);content.addView(box,bp);
         TextView quote=tv("“Disiplin dimulai dari waktu”",18);quote.setTextColor(GREEN);quote.setGravity(Gravity.CENTER);content.addView(quote,new LinearLayout.LayoutParams(-1,dp(58)));
     }
 
@@ -179,14 +179,38 @@ public class MainActivity extends Activity {
         list.removeAllViews();
         for(Schedule s:schedules){
             LinearLayout row=card();row.setOrientation(LinearLayout.HORIZONTAL);row.setGravity(Gravity.CENTER_VERTICAL);
-            LinearLayout inf=new LinearLayout(this);inf.setOrientation(LinearLayout.VERTICAL);
-            TextView name=tv(s.name,16);name.setTypeface(Typeface.DEFAULT,Typeface.BOLD);inf.addView(name,new LinearLayout.LayoutParams(-1,dp(38)));
-            TextView a=tv(s.time+"  •  "+s.audioName,13);a.setTextColor(Color.rgb(90,105,100));inf.addView(a,new LinearLayout.LayoutParams(-1,dp(28)));
-            row.addView(inf,new LinearLayout.LayoutParams(0,dp(70),1));
-            Button play=actionButton("▶");play.setOnClickListener(v->preview(s));row.addView(play,new LinearLayout.LayoutParams(dp(48),dp(40)));
-            Button edit=actionButton("Suara");edit.setOnClickListener(v->chooseAudio(s.id));row.addView(edit,new LinearLayout.LayoutParams(dp(72),dp(40)));
-            LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(-1,dp(80));rp.setMargins(dp(8),dp(4),dp(8),0);list.addView(row,rp);
+            LinearLayout inf=new LinearLayout(this);inf.setOrientation(LinearLayout.VERTICAL);inf.setPadding(0,0,dp(6),0);
+            TextView name=tv(s.name,16);name.setTypeface(Typeface.DEFAULT,Typeface.BOLD);name.setSingleLine(false);inf.addView(name,new LinearLayout.LayoutParams(-1,dp(38)));
+            TextView a=tv(s.time+"  •  "+s.audioName,13);a.setTextColor(Color.rgb(90,105,100));inf.addView(a,new LinearLayout.LayoutParams(-1,dp(30)));
+            row.addView(inf,new LinearLayout.LayoutParams(0,dp(76),1));
+            LinearLayout actions=new LinearLayout(this);actions.setOrientation(LinearLayout.VERTICAL);
+            LinearLayout r1=new LinearLayout(this);Button play=actionButton("▶");play.setOnClickListener(v->preview(s));r1.addView(play,new LinearLayout.LayoutParams(dp(54),dp(34)));
+            Button sound=actionButton("Suara");sound.setOnClickListener(v->chooseAudio(s.id));r1.addView(sound,new LinearLayout.LayoutParams(dp(66),dp(34)));actions.addView(r1);
+            LinearLayout r2=new LinearLayout(this);Button edit=actionButton("Edit");edit.setOnClickListener(v->editSchedule(s.id));r2.addView(edit,new LinearLayout.LayoutParams(dp(60),dp(34)));
+            Button del=actionButton("Hapus");del.setOnClickListener(v->deleteSchedule(s.id));r2.addView(del,new LinearLayout.LayoutParams(dp(60),dp(34)));actions.addView(r2);
+            row.addView(actions,new LinearLayout.LayoutParams(dp(126),dp(72)));
+            LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(-1,dp(90));rp.setMargins(dp(8),dp(4),dp(8),0);list.addView(row,rp);
         }
+    }
+
+    void editSchedule(int id){
+        Schedule target=null;for(Schedule s:schedules)if(s.id==id){target=s;break;}if(target==null)return;
+        LinearLayout form=new LinearLayout(this);form.setOrientation(LinearLayout.VERTICAL);form.setPadding(dp(4),dp(4),dp(4),0);
+        EditText name=new EditText(this);name.setText(target.name);name.setHint("Nama bel");form.addView(name,new LinearLayout.LayoutParams(-1,dp(52)));
+        EditText time=new EditText(this);time.setText(target.time);time.setHint("Waktu HH:mm");time.setInputType(2);form.addView(time,new LinearLayout.LayoutParams(-1,dp(52)));
+        new AlertDialog.Builder(this).setTitle("Edit Jadwal Bel").setView(form).setPositiveButton("Simpan",(d,w)->{
+            String n=name.getText().toString().trim(),t=time.getText().toString().trim();
+            if(n.isEmpty())n="Jadwal Baru";
+            if(!t.matches("([01]\\d|2[0-3]):[0-5]\\d")){Toast.makeText(this,"Format waktu harus HH:mm, contoh 13:00",Toast.LENGTH_LONG).show();return;}
+            target.name=n;target.time=t;save();BellReceiver.rescheduleAll(this);showPage(1);
+        }).setNegativeButton("Batal",null).show();
+    }
+
+    void deleteSchedule(int id){
+        Schedule target=null;for(Schedule s:schedules)if(s.id==id){target=s;break;}if(target==null)return;
+        new AlertDialog.Builder(this).setTitle("Hapus Jadwal").setMessage("Hapus jadwal \"" + target.name + "\"?").setPositiveButton("Hapus",(d,w)->{
+            schedules.remove(target);save();BellReceiver.rescheduleAll(this);showPage(1);
+        }).setNegativeButton("Batal",null).show();
     }
 
     void chooseAudio(int id){
