@@ -38,7 +38,7 @@ public class MainActivity extends Activity {
         if(!data.isEmpty()) for(String line:data.split("\\n")){
             try{
                 String[] p=line.split("\\|",-1);
-                if(p.length>=6)schedules.add(new Schedule(Integer.parseInt(p[0]),p[1],p[2],p[3],p[4].isEmpty()?null:p[4],Integer.parseInt(p[5])));
+                if(p.length>=6)schedules.add(new Schedule(Integer.parseInt(p[0]),p[1],p[2],p[3],p[4].isEmpty()?null:p[4],Integer.parseInt(p[5]),p.length>=7?Integer.parseInt(p[6]):31));
             }catch(Exception ignored){}
         }
         if(schedules.isEmpty())for(int i=0;i<names.length;i++)schedules.add(new Schedule(i,times[i],names[i],"Belum ada suara",null,0));
@@ -135,12 +135,14 @@ public class MainActivity extends Activity {
         LinearLayout form=new LinearLayout(this);form.setOrientation(LinearLayout.VERTICAL);form.setPadding(dp(4),dp(4),dp(4),0);
         EditText name=new EditText(this);name.setHint("Nama bel, misalnya Upacara");form.addView(name,new LinearLayout.LayoutParams(-1,dp(52)));
         EditText time=new EditText(this);time.setHint("Waktu (HH:mm), misalnya 13:00");time.setInputType(2);form.addView(time,new LinearLayout.LayoutParams(-1,dp(52)));
+        TextView dh=tv("Hari bel berbunyi",14);dh.setTypeface(Typeface.DEFAULT,Typeface.BOLD);form.addView(dh,new LinearLayout.LayoutParams(-1,dp(30)));
+        dayChecks=addDayChecks(form,31);
         new AlertDialog.Builder(this).setTitle("Tambah Jadwal Bel").setView(form).setPositiveButton("Simpan",(d,w)->{
-            String n=name.getText().toString().trim(), t=time.getText().toString().trim();
-            if(n.isEmpty()) n="Jadwal Baru";
+            String n=name.getText().toString().trim(),t=time.getText().toString().trim();
+            if(n.isEmpty())n="Jadwal Baru";
             if(!t.matches("([01]\\d|2[0-3]):[0-5]\\d")){Toast.makeText(this,"Format waktu harus HH:mm, contoh 13:00",Toast.LENGTH_LONG).show();return;}
             int id=0;for(Schedule s:schedules)id=Math.max(id,s.id+1);
-            schedules.add(new Schedule(id,t,n,"Belum ada suara",null,0));
+            schedules.add(new Schedule(id,t,n,"Belum ada suara",null,0,getDaysMask(dayChecks)));
             save();BellReceiver.rescheduleAll(this);showPage(1);
         }).setNegativeButton("Batal",null).show();
     }
@@ -181,16 +183,39 @@ public class MainActivity extends Activity {
             LinearLayout row=card();row.setOrientation(LinearLayout.HORIZONTAL);row.setGravity(Gravity.CENTER_VERTICAL);
             LinearLayout inf=new LinearLayout(this);inf.setOrientation(LinearLayout.VERTICAL);inf.setPadding(0,0,dp(6),0);
             TextView name=tv(s.name,16);name.setTypeface(Typeface.DEFAULT,Typeface.BOLD);name.setSingleLine(false);inf.addView(name,new LinearLayout.LayoutParams(-1,dp(38)));
-            TextView a=tv(s.time+"  •  "+s.audioName,13);a.setTextColor(Color.rgb(90,105,100));inf.addView(a,new LinearLayout.LayoutParams(-1,dp(30)));
-            row.addView(inf,new LinearLayout.LayoutParams(0,dp(76),1));
+            TextView a=tv(s.time+"  •  "+s.audioName+"\n"+dayText(s.daysMask),12);a.setTextColor(Color.rgb(90,105,100));inf.addView(a,new LinearLayout.LayoutParams(-1,dp(30)));
+            row.addView(inf,new LinearLayout.LayoutParams(0,dp(82),1));
             LinearLayout actions=new LinearLayout(this);actions.setOrientation(LinearLayout.VERTICAL);
             LinearLayout r1=new LinearLayout(this);Button play=actionButton("▶");play.setOnClickListener(v->preview(s));r1.addView(play,new LinearLayout.LayoutParams(dp(54),dp(34)));
             Button sound=actionButton("Suara");sound.setOnClickListener(v->chooseAudio(s.id));r1.addView(sound,new LinearLayout.LayoutParams(dp(66),dp(34)));actions.addView(r1);
             LinearLayout r2=new LinearLayout(this);Button edit=actionButton("Edit");edit.setOnClickListener(v->editSchedule(s.id));r2.addView(edit,new LinearLayout.LayoutParams(dp(60),dp(34)));
             Button del=actionButton("Hapus");del.setOnClickListener(v->deleteSchedule(s.id));r2.addView(del,new LinearLayout.LayoutParams(dp(60),dp(34)));actions.addView(r2);
             row.addView(actions,new LinearLayout.LayoutParams(dp(126),dp(72)));
-            LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(-1,dp(90));rp.setMargins(dp(8),dp(4),dp(8),0);list.addView(row,rp);
+            LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(-1,dp(98));rp.setMargins(dp(8),dp(4),dp(8),0);list.addView(row,rp);
         }
+    }
+
+    CheckBox[] dayChecks;
+    String[] dayNames={"Senin","Selasa","Rabu","Kamis","Jumat","Sabtu","Minggu"};
+
+    int getDaysMask(CheckBox[] checks){
+        int mask=0;for(int i=0;i<7;i++)if(checks[i].isChecked())mask|=(1<<i);return mask==0?31:mask;
+    }
+    String dayText(int mask){
+        StringBuilder b=new StringBuilder();
+        for(int i=0;i<7;i++)if((mask&(1<<i))!=0){if(b.length()>0)b.append(", ");b.append(dayNames[i]);}
+        return b.length()==0?"Tidak ada hari":b.toString();
+    }
+    CheckBox[] addDayChecks(LinearLayout form,int mask){
+        CheckBox[] checks=new CheckBox[7];
+        LinearLayout days=new LinearLayout(this);days.setOrientation(LinearLayout.VERTICAL);
+        for(int r=0;r<4;r++){
+            LinearLayout line=new LinearLayout(this);
+            for(int col=0;col<2;col++){int i=r*2+col;if(i>=7)break;CheckBox cb=new CheckBox(this);cb.setText(dayNames[i]);cb.setTextSize(13);cb.setChecked((mask&(1<<i))!=0);line.addView(cb,new LinearLayout.LayoutParams(0,dp(38),1));checks[i]=cb;}
+            days.addView(line,new LinearLayout.LayoutParams(-1,dp(38)));
+        }
+        form.addView(days);
+        return checks;
     }
 
     void editSchedule(int id){
@@ -198,11 +223,13 @@ public class MainActivity extends Activity {
         LinearLayout form=new LinearLayout(this);form.setOrientation(LinearLayout.VERTICAL);form.setPadding(dp(4),dp(4),dp(4),0);
         EditText name=new EditText(this);name.setText(target.name);name.setHint("Nama bel");form.addView(name,new LinearLayout.LayoutParams(-1,dp(52)));
         EditText time=new EditText(this);time.setText(target.time);time.setHint("Waktu HH:mm");time.setInputType(2);form.addView(time,new LinearLayout.LayoutParams(-1,dp(52)));
+        TextView dh=tv("Hari bel berbunyi",14);dh.setTypeface(Typeface.DEFAULT,Typeface.BOLD);form.addView(dh,new LinearLayout.LayoutParams(-1,dp(30)));
+        dayChecks=addDayChecks(form,target.daysMask);
         new AlertDialog.Builder(this).setTitle("Edit Jadwal Bel").setView(form).setPositiveButton("Simpan",(d,w)->{
             String n=name.getText().toString().trim(),t=time.getText().toString().trim();
             if(n.isEmpty())n="Jadwal Baru";
             if(!t.matches("([01]\\d|2[0-3]):[0-5]\\d")){Toast.makeText(this,"Format waktu harus HH:mm, contoh 13:00",Toast.LENGTH_LONG).show();return;}
-            target.name=n;target.time=t;save();BellReceiver.rescheduleAll(this);showPage(1);
+            target.name=n;target.time=t;target.daysMask=getDaysMask(dayChecks);save();BellReceiver.rescheduleAll(this);showPage(1);
         }).setNegativeButton("Batal",null).show();
     }
 
