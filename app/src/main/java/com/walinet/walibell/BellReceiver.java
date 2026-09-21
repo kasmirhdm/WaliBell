@@ -67,6 +67,57 @@ public class BellReceiver extends BroadcastReceiver {
         sp.edit().putString("data",b.toString()).apply();
     }
 
+    static void notifyExactAlarmPermissionRequired(Context c){
+        final String channelId="walibell_permission";
+        final String channelName="WaliBell Permission";
+        try{
+            NotificationManager nm=(NotificationManager)c.getSystemService(Context.NOTIFICATION_SERVICE);
+            if(nm==null)return;
+
+            if(android.os.Build.VERSION.SDK_INT>=26){
+                NotificationChannel ch=new NotificationChannel(
+                    channelId,channelName,NotificationManager.IMPORTANCE_HIGH
+                );
+                ch.setDescription("Peringatan jika akses Alarm & Pengingat WaliBell belum aktif");
+                ch.setShowBadge(true);
+                nm.createNotificationChannel(ch);
+            }
+
+            Intent settings=new Intent(
+                android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
+                android.net.Uri.parse("package:"+c.getPackageName())
+            );
+            PendingIntent openSettings=PendingIntent.getActivity(
+                c,99001,settings,
+                PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE
+            );
+
+            Notification.Builder b=android.os.Build.VERSION.SDK_INT>=26
+                ?new Notification.Builder(c,channelId)
+                :new Notification.Builder(c);
+
+            Notification n=b
+                .setSmallIcon(R.drawable.ic_bell)
+                .setContentTitle("Izin Alarm Diperlukan")
+                .setContentText("WaliBell tidak dapat menjadwalkan bel. Ketuk untuk mengaktifkan izin Alarm & Pengingat.")
+                .setStyle(new Notification.BigTextStyle().bigText(
+                    "WaliBell tidak dapat menjadwalkan bel karena akses Alarm & Pengingat belum aktif. Ketuk notifikasi untuk membuka pengaturan."
+                ))
+                .setContentIntent(openSettings)
+                .setOngoing(true)
+                .setAutoCancel(false)
+                .setCategory(Notification.CATEGORY_ALARM)
+                .setPriority(Notification.PRIORITY_MAX)
+                .build();
+
+            nm.notify(99001,n);
+        }catch(SecurityException e){
+            Log.e(TAG,"Tidak dapat menampilkan notifikasi izin; kemungkinan izin notifikasi belum diberikan",e);
+        }catch(Exception e){
+            Log.e(TAG,"Gagal menampilkan notifikasi izin exact alarm",e);
+        }
+    }
+
     static int dayBit(int calendarDay){
         return 1 << ((calendarDay + 5) % 7);
     }
@@ -94,8 +145,10 @@ public class BellReceiver extends BroadcastReceiver {
                             am.cancel(pi);
                             pi.cancel();
                         }
+                        Intent backupOld=new Intent(c,BellReceiver.class);
+                        backupOld.setAction("com.walinet.walibell.BELL_BACKUP_"+id+"_"+d);
                         PendingIntent backupPi=PendingIntent.getBroadcast(
-                            c,id*10+d+200000,old,
+                            c,id*10+d+200000,backupOld,
                             PendingIntent.FLAG_NO_CREATE|PendingIntent.FLAG_IMMUTABLE
                         );
                         if(backupPi!=null){
@@ -169,6 +222,7 @@ public class BellReceiver extends BroadcastReceiver {
 
                 if(android.os.Build.VERSION.SDK_INT>=31 && !am.canScheduleExactAlarms()){
                     Log.e(TAG,"Exact alarm permission BELUM diberikan; alarm tidak dijadwalkan: "+p[2]+" "+p[1]);
+                    notifyExactAlarmPermissionRequired(c);
                     continue;
                 }
 
