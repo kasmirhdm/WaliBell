@@ -34,7 +34,7 @@ public class MainActivity extends Activity {
         String data=getSharedPreferences("schedule",0).getString("data","");
         if(!data.isEmpty()){
             for(String line:data.split("\n")){
-                try{String[] p=line.split("\|",-1); if(p.length>=6)schedules.add(new Schedule(Integer.parseInt(p[0]),p[1],p[2],p[3],p[4].isEmpty()?null:p[4],Integer.parseInt(p[5])));}catch(Exception ignored){}
+                try{String[] p=line.split("\\|",-1); if(p.length>=6)schedules.add(new Schedule(Integer.parseInt(p[0]),p[1],p[2],p[3],p[4].isEmpty()?null:p[4],Integer.parseInt(p[5])));}catch(Exception ignored){}
             }
         }
         if(schedules.isEmpty()) for(int i=0;i<names.length;i++) schedules.add(new Schedule(i,times[i],names[i],"Belum ada suara",null,0));
