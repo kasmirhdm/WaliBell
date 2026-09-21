@@ -89,12 +89,13 @@ public class MainActivity extends Activity {
 
     void startRecording(String name){
         if(name.isEmpty())name="Rekaman Saya";
+        final String recordingName=name;
         try{
             recordPath=new File(getExternalFilesDir(null),"walibell_"+System.currentTimeMillis()+".m4a").getAbsolutePath();
             recorder=new MediaRecorder(this); recorder.setAudioSource(MediaRecorder.AudioSource.MIC); recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4); recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC); recorder.setOutputFile(recordPath); recorder.prepare(); recorder.start();
             new AlertDialog.Builder(this).setTitle("Sedang merekam").setMessage("Tekan STOP setelah selesai").setPositiveButton("STOP",(d,w)->{
                 try{recorder.stop();recorder.release();}catch(Exception ignored){}
-                Schedule s=schedules.get(editingId); s.audioName=name; s.audioUri=Uri.fromFile(new File(recordPath)).toString(); s.rawId=0; save(); render(); BellReceiver.rescheduleAll(this);
+                Schedule s=schedules.get(editingId); s.audioName=recordingName; s.audioUri=Uri.fromFile(new File(recordPath)).toString(); s.rawId=0; save(); render(); BellReceiver.rescheduleAll(this);
             }).setOnCancelListener(d->{try{recorder.stop();recorder.release();}catch(Exception ignored){}}).show();
         }catch(Exception e){Toast.makeText(this,"Gagal merekam",Toast.LENGTH_SHORT).show();}
     }
