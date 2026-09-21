@@ -42,11 +42,11 @@ jobs:
       - name: Rename APK
         run: |
           mkdir -p release
-          cp app/build/outputs/apk/debug/app-debug.apk release/WaliBell_V4.0.apk
+          cp app/build/outputs/apk/debug/app-debug.apk release/WaliBell_V4.1.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: WaliBell-V4.0-APK
-          path: release/WaliBell_V4.0.apk
+          name: WaliBell-V4.1-APK
+          path: release/WaliBell_V4.1.apk
           if-no-files-found: error
