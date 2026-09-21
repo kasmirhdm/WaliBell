@@ -40,6 +40,8 @@ public class MainActivity extends ComponentActivity {
     TextView kioskClock,kioskCountdown;
     Handler kioskHandler=new Handler(Looper.getMainLooper());
     Runnable kioskTicker;
+    Handler homeHandler=new Handler(Looper.getMainLooper());
+    Runnable homeTicker;
     boolean kioskMode=false;
     ArrayList<Schedule> schedules=new ArrayList<>();
     int editingId=-1,currentPage=1;
@@ -171,9 +173,10 @@ public class MainActivity extends ComponentActivity {
         root.addView(content,new LinearLayout.LayoutParams(-1,0,1));
 
         LinearLayout nav=new LinearLayout(this);nav.setOrientation(LinearLayout.HORIZONTAL);bottomNav=nav;nav.setGravity(Gravity.CENTER);nav.setPadding(dp(4),dp(4),dp(4),dp(4));
-        int[] navIcons={R.drawable.ic_home,R.drawable.ic_schedule,R.drawable.ic_music,R.drawable.ic_bell,R.drawable.ic_devices,R.drawable.ic_info};
-        String[] labels={"Beranda","Jadwal","Suara","Riwayat","Perangkat","Tentang"};
-        for(int i=0;i<labels.length;i++){int page=(i==3)?PAGE_HISTORY:(i==4)?PAGE_DEVICE:(i==5)?PAGE_ABOUT:i;nav.addView(navItem(labels[i],navIcons[i],page),new LinearLayout.LayoutParams(0,dp(52),1));}
+        int[] navIcons={R.drawable.ic_home,R.drawable.ic_schedule,R.drawable.ic_music,R.drawable.ic_devices,R.drawable.ic_info};
+        String[] labels={"Beranda","Jadwal","Suara","Perangkat","Tentang"};
+        int[] pages={PAGE_HOME,PAGE_SCHEDULE,PAGE_SOUND,PAGE_DEVICE,PAGE_ABOUT};
+        for(int i=0;i<labels.length;i++)nav.addView(navItem(labels[i],navIcons[i],pages[i]),new LinearLayout.LayoutParams(0,dp(52),1));
         root.addView(nav,new LinearLayout.LayoutParams(-1,dp(62)));
         applySystemTheme();
         if(Build.VERSION.SDK_INT>=26)getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR|View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
@@ -415,6 +418,7 @@ public class MainActivity extends ComponentActivity {
     }
 
     void showPage(int page){
+        if(homeTicker!=null)homeHandler.removeCallbacks(homeTicker);
         currentPage=page;
         kioskMode=false;
         if(bottomNav!=null)bottomNav.setVisibility(View.VISIBLE);
@@ -429,33 +433,310 @@ public class MainActivity extends ComponentActivity {
 
     void showHome(){
         clearContent();
-        content.addView(header("WaliBell","Bel Sekolah Otomatis"),new LinearLayout.LayoutParams(-1,dp(78)));
-        LinearLayout date=card();
-        TextView d=tv("SMPN 1 Sungai Batang",15);d.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-        date.addView(d,new LinearLayout.LayoutParams(-1,dp(26)));
-        TextView clock=tv("Jadwal Bel",15);date.addView(clock,new LinearLayout.LayoutParams(-1,dp(25)));
-        Schedule next=schedules.isEmpty()?null:schedules.get(0);
-        TextView nx=tv(next==null?"Belum ada jadwal":next.name+"   •   "+next.time,25);nx.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-        date.addView(nx,new LinearLayout.LayoutParams(-1,dp(42)));
-        LinearLayout.LayoutParams dp=new LinearLayout.LayoutParams(-1,dp(112));dp.setMargins(dp(8),dp(8),dp(8),0);content.addView(date,dp);
 
-        LinearLayout upcoming=card();upcoming.setPadding(dp(14),dp(14),dp(14),dp(12));
-        TextView ut=tv("Jadwal berikutnya",15);ut.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-        upcoming.addView(ut,new LinearLayout.LayoutParams(-1,dp(30)));
-        upcoming.addView(tv(next==null?"Belum ada jadwal":next.name+"\n"+next.time,20),new LinearLayout.LayoutParams(-1,dp(64)));
-        LinearLayout.LayoutParams up=new LinearLayout.LayoutParams(-1,dp(108));up.setMargins(dp(8),dp(8),dp(8),0);content.addView(upcoming,up);
+        ScrollView scroll=new ScrollView(this);
+        scroll.setFillViewport(true);
+        scroll.setClipToPadding(false);
+        LinearLayout page=new LinearLayout(this);
+        page.setOrientation(LinearLayout.VERTICAL);
+        page.setPadding(dp(10),dp(8),dp(10),dp(18));
 
-        Button manual=iconButton("Bel Manual",R.drawable.ic_bell);manual.setTextColor(Color.WHITE);manual.setBackground(stadiumBg(themeColor()));
-        manual.setOnClickListener(v->{v.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);if(next!=null)preview(next);});
-        LinearLayout.LayoutParams mp=new LinearLayout.LayoutParams(-1,dp(50));mp.setMargins(dp(8),dp(8),dp(8),0);content.addView(manual,mp);
-        Button kiosk=iconButton("Mode Layar Penuh",R.drawable.ic_devices);kiosk.setTextColor(Color.WHITE);kiosk.setBackground(stadiumBg(themeColor()));kiosk.setOnClickListener(v->showKioskPage());
-        LinearLayout.LayoutParams kp=new LinearLayout.LayoutParams(-1,dp(48));kp.setMargins(dp(8),dp(6),dp(8),0);content.addView(kiosk,kp);
+        // ===== HEADER =====
+        LinearLayout hero=new LinearLayout(this);
+        hero.setOrientation(LinearLayout.HORIZONTAL);
+        hero.setGravity(Gravity.CENTER_VERTICAL);
+        hero.setPadding(dp(22),dp(14),dp(18),dp(14));
 
-        LinearLayout status=card();status.setPadding(dp(14),dp(14),dp(14),dp(12));
-        TextView st=tv("Status aplikasi",16);st.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-        status.addView(st,new LinearLayout.LayoutParams(-1,dp(30)));
-        status.addView(tv("Aktif  •  Semua jadwal berjalan",14),new LinearLayout.LayoutParams(-1,dp(30)));
-        LinearLayout.LayoutParams sp=new LinearLayout.LayoutParams(-1,dp(76));sp.setMargins(dp(8),dp(8),dp(8),0);content.addView(status,sp);
+        GradientDrawable heroBg=new GradientDrawable(
+            GradientDrawable.Orientation.TL_BR,
+            new int[]{Color.rgb(8,47,73),Color.rgb(15,75,110),Color.rgb(30,64,110)}
+        );
+        heroBg.setCornerRadius(dp(24));
+        hero.setBackground(heroBg);
+        hero.setElevation(dp(5));
+
+        ImageView bellIcon=new ImageView(this);
+        bellIcon.setImageResource(R.drawable.ic_bell);
+        bellIcon.setColorFilter(Color.rgb(250,204,21),android.graphics.PorterDuff.Mode.SRC_IN);
+        bellIcon.setContentDescription("Lonceng WaliBell");
+        hero.addView(bellIcon,new LinearLayout.LayoutParams(dp(58),dp(58)));
+
+        LinearLayout heroText=new LinearLayout(this);
+        heroText.setOrientation(LinearLayout.VERTICAL);
+        heroText.setPadding(dp(14),0,0,0);
+        TextView h1=new TextView(this);
+        h1.setText("WaliBell");h1.setTextColor(Color.WHITE);h1.setTextSize(30);
+        h1.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+        TextView h2=new TextView(this);
+        h2.setText("Bel Sekolah Otomatis");h2.setTextColor(Color.WHITE);h2.setTextSize(15);
+        TextView school=new TextView(this);
+        school.setText("SMPN 1 SUNGAI BATANG");school.setTextColor(Color.rgb(250,204,21));school.setTextSize(12);
+        school.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+        heroText.addView(h1,new LinearLayout.LayoutParams(-1,dp(40)));
+        heroText.addView(h2,new LinearLayout.LayoutParams(-1,dp(27)));
+        heroText.addView(school,new LinearLayout.LayoutParams(-1,dp(24)));
+        hero.addView(heroText,new LinearLayout.LayoutParams(0,-2,1));
+        page.addView(hero,new LinearLayout.LayoutParams(-1,(int)(getResources().getDisplayMetrics().heightPixels*0.23f)));
+
+        // ===== CLOCK & STATUS CARD =====
+        LinearLayout statusCard=card();
+        statusCard.setPadding(dp(16),dp(14),dp(16),dp(14));
+        statusCard.setElevation(dp(4));
+
+        LinearLayout cols=new LinearLayout(this);
+        cols.setOrientation(LinearLayout.HORIZONTAL);
+
+        LinearLayout left=new LinearLayout(this);
+        left.setOrientation(LinearLayout.VERTICAL);
+        TextView date=tv("",14);
+        date.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+        TextView clock=tv("",30);
+        clock.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+        clock.setTextColor(Color.rgb(7,55,90));
+        left.addView(date,new LinearLayout.LayoutParams(-1,dp(28)));
+        left.addView(clock,new LinearLayout.LayoutParams(-1,dp(46)));
+        cols.addView(left,new LinearLayout.LayoutParams(0,-2,1.25f));
+
+        LinearLayout right=new LinearLayout(this);
+        right.setOrientation(LinearLayout.VERTICAL);
+        right.setPadding(dp(10),0,0,0);
+        LinearLayout activeRow=new LinearLayout(this);
+        activeRow.setGravity(Gravity.CENTER_VERTICAL);
+        TextView activeText=tv("Bel Aktif",15);
+        activeText.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+        activeText.setTextColor(Color.rgb(22,101,52));
+        Switch bellSwitch=new Switch(this);
+        bellSwitch.setChecked(getSharedPreferences("ui",0).getBoolean("bell_enabled",true));
+        activeRow.addView(activeText,new LinearLayout.LayoutParams(0,dp(34),1));
+        activeRow.addView(bellSwitch,new LinearLayout.LayoutParams(dp(54),dp(42)));
+        right.addView(activeRow);
+
+        LinearLayout btRow=new LinearLayout(this);
+        btRow.setGravity(Gravity.CENTER_VERTICAL);
+        TextView btIcon=tv("ᛒ",18);
+        btIcon.setTextColor(Color.rgb(100,116,139));
+        TextView btText=tv("",12);
+        btRow.addView(btIcon,new LinearLayout.LayoutParams(dp(24),dp(28)));
+        btRow.addView(btText,new LinearLayout.LayoutParams(0,dp(30),1));
+        right.addView(btRow);
+
+        TextView activeStatus=tv("",12);
+        activeStatus.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+        activeStatus.setTextColor(Color.rgb(22,163,74));
+        right.addView(activeStatus,new LinearLayout.LayoutParams(-1,dp(27)));
+        cols.addView(right,new LinearLayout.LayoutParams(0,-2,1));
+        statusCard.addView(cols);
+        LinearLayout.LayoutParams scp=new LinearLayout.LayoutParams(-1,-2);
+        scp.setMargins(0,dp(10),0,0);
+        page.addView(statusCard,scp);
+
+        // ===== NEXT SCHEDULE =====
+        LinearLayout nextCard=new LinearLayout(this);
+        nextCard.setOrientation(LinearLayout.HORIZONTAL);
+        nextCard.setGravity(Gravity.CENTER_VERTICAL);
+        nextCard.setPadding(dp(16),dp(10),dp(16),dp(10));
+        GradientDrawable nextBg=bg(Color.rgb(224,242,254));
+        nextCard.setBackground(nextBg);
+        nextCard.setElevation(dp(2));
+        ImageView alarmIcon=new ImageView(this);
+        alarmIcon.setImageResource(R.drawable.ic_schedule);
+        alarmIcon.setColorFilter(Color.rgb(220,38,38),android.graphics.PorterDuff.Mode.SRC_IN);
+        nextCard.addView(alarmIcon,new LinearLayout.LayoutParams(dp(32),dp(32)));
+        TextView nextText=tv("",14);
+        nextText.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+        nextText.setTextColor(Color.rgb(15,55,80));
+        nextCard.addView(nextText,new LinearLayout.LayoutParams(0,dp(44),1));
+        LinearLayout.LayoutParams ncp=new LinearLayout.LayoutParams(-1,dp(64));
+        ncp.setMargins(0,dp(10),0,0);
+        page.addView(nextCard,ncp);
+
+        // ===== MANUAL BELL =====
+        LinearLayout manualTitle=new LinearLayout(this);
+        manualTitle.setGravity(Gravity.CENTER_VERTICAL);
+        ImageView mi=new ImageView(this);mi.setImageResource(R.drawable.ic_bell);
+        mi.setColorFilter(Color.rgb(7,55,90),android.graphics.PorterDuff.Mode.SRC_IN);
+        manualTitle.addView(mi,new LinearLayout.LayoutParams(dp(25),dp(25)));
+        TextView mt=tv("Bel Manual",17);mt.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+        manualTitle.addView(mt,new LinearLayout.LayoutParams(-1,dp(32)));
+        LinearLayout.LayoutParams mtp=new LinearLayout.LayoutParams(-1,dp(34));
+        mtp.setMargins(0,dp(10),0,0);page.addView(manualTitle,mtp);
+
+        LinearLayout grid=new LinearLayout(this);
+        grid.setOrientation(LinearLayout.VERTICAL);
+        String[] manualNames={"BEL MASUK","PERGANTIAN","ISTIRAHAT","MASUK SETELAH ISTIRAHAT","BEL PULANG","BUNYIKAN SEKARANG"};
+        int[] manualColors={
+            Color.rgb(219,239,255),Color.rgb(255,239,204),Color.rgb(220,247,226),
+            Color.rgb(237,225,255),Color.rgb(255,225,232),Color.rgb(7,55,90)
+        };
+        int[] manualIcons={R.drawable.ic_bell,R.drawable.ic_schedule,R.drawable.ic_music,R.drawable.ic_devices,R.drawable.ic_home,R.drawable.ic_music};
+        for(int row=0;row<2;row++){
+            LinearLayout line=new LinearLayout(this);
+            line.setOrientation(LinearLayout.HORIZONTAL);
+            for(int col=0;col<3;col++){
+                final int index=row*3+col;
+                Button mb=actionButton(manualNames[index]);
+                mb.setTextSize(index==3?10:11);
+                mb.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+                mb.setGravity(Gravity.CENTER);
+                mb.setCompoundDrawablesWithIntrinsicBounds(manualIcons[index],0,0,0);
+                mb.setCompoundDrawablePadding(dp(5));
+                mb.setPadding(dp(3),0,dp(3),0);
+                mb.setBackground(bg(manualColors[index]));
+                mb.setTextColor(index==5?Color.WHITE:Color.rgb(15,55,80));
+                if(index==5)mb.setBackground(stadiumBg(Color.rgb(7,55,90)));
+                mb.setOnClickListener(v->{
+                    v.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+                    playManualBell(index);
+                });
+                LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(0,dp(62),1);
+                bp.setMargins(dp(3),dp(3),dp(3),dp(3));
+                line.addView(mb,bp);
+            }
+            grid.addView(line,new LinearLayout.LayoutParams(-1,dp(68)));
+        }
+        page.addView(grid);
+
+        // ===== TODAY SCHEDULE =====
+        LinearLayout todayTitle=new LinearLayout(this);
+        todayTitle.setGravity(Gravity.CENTER_VERTICAL);
+        ImageView ci=new ImageView(this);ci.setImageResource(R.drawable.ic_schedule);
+        ci.setColorFilter(Color.rgb(7,55,90),android.graphics.PorterDuff.Mode.SRC_IN);
+        todayTitle.addView(ci,new LinearLayout.LayoutParams(dp(25),dp(25)));
+        LinearLayout todayWords=new LinearLayout(this);
+        todayWords.setOrientation(LinearLayout.VERTICAL);
+        TextView tt=tv("Jadwal Hari Ini",17);tt.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+        TextView count=tv("",11);
+        todayWords.addView(tt,new LinearLayout.LayoutParams(-1,dp(25)));
+        todayWords.addView(count,new LinearLayout.LayoutParams(-1,dp(20)));
+        todayTitle.addView(todayWords,new LinearLayout.LayoutParams(0,dp(45),1));
+        LinearLayout.LayoutParams ttp=new LinearLayout.LayoutParams(-1,dp(48));
+        ttp.setMargins(0,dp(12),0,0);page.addView(todayTitle,ttp);
+
+        LinearLayout scheduleList=new LinearLayout(this);
+        scheduleList.setOrientation(LinearLayout.VERTICAL);
+        page.addView(scheduleList,new LinearLayout.LayoutParams(-1,-2));
+
+        scroll.addView(page);
+        content.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
+
+        Runnable refresh=()->{
+            Calendar now=Calendar.getInstance();
+            date.setText(new SimpleDateFormat("EEEE, dd MMMM yyyy",new Locale("id","ID")).format(now));
+            clock.setText(new SimpleDateFormat("HH:mm:ss",Locale.getDefault()).format(now));
+
+            Schedule next=getNextSchedule();
+            nextText.setText(next==null?"Berikutnya: Tidak ada jadwal":("Berikutnya: "+next.name+"  •  "+next.time));
+
+            boolean connected=isBluetoothConnected();
+            btText.setText(connected?"Bluetooth terhubung":"Bluetooth belum terhubung");
+            btText.setTextColor(connected?Color.rgb(22,163,74):Color.rgb(100,116,139));
+            btIcon.setTextColor(connected?Color.rgb(22,163,74):Color.rgb(100,116,139));
+            activeStatus.setText(bellSwitch.isChecked()?"✓ Bel Aktif":"Bel Nonaktif");
+            activeStatus.setTextColor(bellSwitch.isChecked()?Color.rgb(22,163,74):Color.rgb(148,163,184));
+
+            scheduleList.removeAllViews();
+            Calendar today=Calendar.getInstance();
+            int todayBit=1<<((today.get(Calendar.DAY_OF_WEEK)+5)%7);
+            ArrayList<Schedule> todaySchedules=new ArrayList<>();
+            for(Schedule s:schedules)if((s.daysMask&todayBit)!=0)todaySchedules.add(s);
+            Collections.sort(todaySchedules,(a,b)->a.time.compareTo(b.time));
+            count.setText(todaySchedules.size()+" waktu");
+            for(Schedule s:todaySchedules){
+                LinearLayout item=new LinearLayout(this);
+                item.setGravity(Gravity.CENTER_VERTICAL);
+                item.setPadding(dp(12),dp(5),dp(10),dp(5));
+                item.setBackground(bg(darkMode()?Color.rgb(27,38,43):Color.rgb(248,250,249)));
+                item.setElevation(dp(1));
+                TextView tm=tv(s.time,16);tm.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+                item.addView(tm,new LinearLayout.LayoutParams(dp(62),dp(48)));
+                TextView nm=tv(s.name,14);
+                item.addView(nm,new LinearLayout.LayoutParams(0,dp(48),1));
+                boolean done=isScheduleTimePassed(s.time);
+                TextView stt=tv(done?"✓ Selesai":"◷",13);
+                stt.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+                stt.setGravity(Gravity.CENTER);
+                stt.setTextColor(done?Color.rgb(22,163,74):Color.rgb(220,38,38));
+                item.addView(stt,new LinearLayout.LayoutParams(dp(72),dp(48)));
+                LinearLayout.LayoutParams ip=new LinearLayout.LayoutParams(-1,dp(58));
+                ip.setMargins(0,dp(3),0,dp(3));
+                scheduleList.addView(item,ip);
+            }
+            if(todaySchedules.isEmpty()){
+                TextView empty=tv("Tidak ada jadwal untuk hari ini.",13);
+                empty.setPadding(dp(12),dp(8),dp(12),dp(8));
+                scheduleList.addView(empty);
+            }
+            scroll.post(()->{});
+        };
+        bellSwitch.setOnCheckedChangeListener((buttonView,isChecked)->{
+            getSharedPreferences("ui",0).edit().putBoolean("bell_enabled",isChecked).apply();
+            if(isChecked)BellReceiver.rescheduleAll(this);
+            else BellReceiver.rescheduleAll(this);
+            activeStatus.setText(isChecked?"✓ Bel Aktif":"Bel Nonaktif");
+        });
+        homeTicker=()->{
+            if(currentPage==PAGE_HOME){
+                refresh.run();
+                homeHandler.postDelayed(homeTicker,1000);
+            }
+        };
+        refresh.run();
+        homeHandler.postDelayed(homeTicker,1000);
+    }
+
+    boolean isBluetoothConnected(){
+        try{
+            if(Build.VERSION.SDK_INT>=31 && checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT)!=PackageManager.PERMISSION_GRANTED)return false;
+            BluetoothAdapter a=BluetoothAdapter.getDefaultAdapter();
+            if(a==null||!a.isEnabled())return false;
+            return a.getProfileConnectionState(android.bluetooth.BluetoothProfile.A2DP)==BluetoothAdapter.STATE_CONNECTED
+                || a.getProfileConnectionState(android.bluetooth.BluetoothProfile.HEADSET)==BluetoothAdapter.STATE_CONNECTED;
+        }catch(Exception e){return false;}
+    }
+
+    boolean isScheduleTimePassed(String time){
+        try{
+            Calendar n=Calendar.getInstance();
+            String[] hm=time.split(":");
+            Calendar t=(Calendar)n.clone();
+            t.set(Calendar.HOUR_OF_DAY,Integer.parseInt(hm[0]));
+            t.set(Calendar.MINUTE,Integer.parseInt(hm[1]));
+            t.set(Calendar.SECOND,59);
+            t.set(Calendar.MILLISECOND,999);
+            return n.after(t);
+        }catch(Exception e){return false;}
+    }
+
+    Schedule findManualSchedule(String... keys){
+        for(String key:keys){
+            for(Schedule s:schedules){
+                String n=s.name.toLowerCase(Locale.US);
+                if(n.contains(key.toLowerCase(Locale.US)) &&
+                   (s.rawId!=0 || (s.audioUri!=null&&!s.audioUri.isEmpty())))return s;
+            }
+        }
+        return null;
+    }
+
+    void playManualBell(int index){
+        String[] keys;
+        switch(index){
+            case 0:keys=new String[]{"masuk"};break;
+            case 1:keys=new String[]{"pergantian","pelajaran"};break;
+            case 2:keys=new String[]{"istirahat"};break;
+            case 3:keys=new String[]{"masuk setelah istirahat"};break;
+            case 4:keys=new String[]{"pulang"};break;
+            default:keys=new String[]{""};
+        }
+        Schedule s=findManualSchedule(keys);
+        if(s==null && index==5){
+            for(Schedule x:schedules)if(x.rawId!=0||(x.audioUri!=null&&!x.audioUri.isEmpty())){s=x;break;}
+        }
+        if(s==null){
+            Toast.makeText(this,"Belum ada suara untuk tombol ini. Atur suara di menu Suara.",Toast.LENGTH_LONG).show();
+            return;
+        }
+        preview(s);
     }
 
     void showSchedulePage(){
@@ -558,7 +839,7 @@ public class MainActivity extends ComponentActivity {
         LinearLayout page=new LinearLayout(this);page.setOrientation(LinearLayout.VERTICAL);
         LinearLayout box=card();box.setGravity(Gravity.CENTER);
         TextView n=tv("WaliBell",28);n.setTypeface(Typeface.create("sans-serif-medium",Typeface.BOLD));n.setGravity(Gravity.CENTER);n.setTextColor(themeColor());box.addView(n,new LinearLayout.LayoutParams(-1,dp(48)));
-        TextView v=tv("Versi 4.6\n\nAplikasi bel sekolah otomatis\nMudah, Praktis, dan Andal\n\nKasmir, S.Pd\nKepala Sekolah\nSMPN 1 Sungai Batang\nIndragiri Hilir - Riau",16);v.setGravity(Gravity.CENTER);box.addView(v,new LinearLayout.LayoutParams(-1,dp(210)));
+        TextView v=tv("Versi 4.7\n\nAplikasi bel sekolah otomatis\nMudah, Praktis, dan Andal\n\nKasmir, S.Pd\nKepala Sekolah\nSMPN 1 Sungai Batang\nIndragiri Hilir - Riau",16);v.setGravity(Gravity.CENTER);box.addView(v,new LinearLayout.LayoutParams(-1,dp(210)));
         LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-1,dp(300));bp.setMargins(dp(8),dp(8),dp(8),0);page.addView(box,bp);
         TextView quote=tv("“Disiplin dimulai dari waktu”",18);quote.setTextColor(themeColor());quote.setGravity(Gravity.CENTER);page.addView(quote,new LinearLayout.LayoutParams(-1,dp(58)));
         LinearLayout tools=card();TextView th=tv("Tampilan & Alat",17);th.setTypeface(Typeface.create("sans-serif-medium",Typeface.BOLD));tools.addView(th,new LinearLayout.LayoutParams(-1,dp(32)));
