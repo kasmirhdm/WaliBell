@@ -10,6 +10,12 @@ public class BellReceiver extends BroadcastReceiver {
     private static final String TAG = "WaliBellAlarm";
 
     @Override public void onReceive(Context c, Intent i){
+        boolean enabled=c.getSharedPreferences("ui",0).getBoolean("bell_enabled",true);
+        if(!enabled){
+            Log.i(TAG,"Bel otomatis nonaktif; alarm diabaikan.");
+            rescheduleAll(c);
+            return;
+        }
         int raw=i.getIntExtra("raw",0);
         String uri=i.getStringExtra("uri");
         String alarmKey=i.getStringExtra("alarmKey");
@@ -169,6 +175,12 @@ public class BellReceiver extends BroadcastReceiver {
             }
         }
         if(data.isEmpty())return;
+
+        boolean enabled=c.getSharedPreferences("ui",0).getBoolean("bell_enabled",true);
+        if(!enabled){
+            Log.i(TAG,"Bel otomatis nonaktif; semua alarm tidak dijadwalkan.");
+            return;
+        }
 
         // IMPORTANT: no set(), setInexact(), setAndAllowWhileIdle(), or
         // repeating/inexact alarm is used here. Each schedule is an exact,
