@@ -68,28 +68,156 @@ public class MainActivity extends Activity {
         return b;
     }
 
+    LinearLayout content;
+    int currentPage=1;
+
     void build(){
-        LinearLayout r=new LinearLayout(this);
-        r.setOrientation(LinearLayout.VERTICAL);
-        r.setPadding(24,24,24,32);
+        LinearLayout root=new LinearLayout(this);
+        root.setOrientation(LinearLayout.VERTICAL);
+        root.setBackgroundColor(Color.WHITE);
 
-        TextView title=tv("WaliBell",28);
-        title.setTypeface(null,android.graphics.Typeface.BOLD);
-        r.addView(title,new LinearLayout.LayoutParams(-1,52));
+        content=new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setPadding(20,20,20,8);
+        root.addView(content,new LinearLayout.LayoutParams(-1,0,1));
 
-        TextView sub=tv("Jadwal Bel",18);
-        r.addView(sub,new LinearLayout.LayoutParams(-1,42));
+        LinearLayout nav=new LinearLayout(this);
+        nav.setOrientation(LinearLayout.HORIZONTAL);
+        nav.setGravity(Gravity.CENTER);
+        nav.setPadding(4,6,4,10);
+        String[] labels={"⌂\nBeranda","▣\nJadwal","♫\nSuara","⚙\nPerangkat","ⓘ\nTentang"};
+        for(int i=0;i<labels.length;i++){
+            final int page=i;
+            Button b=actionButton(labels[i]);
+            b.setTextSize(11);
+            b.setGravity(Gravity.CENTER);
+            b.setPadding(0,2,0,0);
+            nav.addView(b,new LinearLayout.LayoutParams(0,62,1));
+            b.setOnClickListener(v->showPage(page));
+        }
+        root.addView(nav,new LinearLayout.LayoutParams(-1,72));
+        setContentView(root);
+        showPage(1);
+    }
 
+    void clearContent(){
+        content.removeAllViews();
+    }
+
+    TextView heading(String title,String subtitle){
+        TextView h=tv(title,26);
+        h.setTypeface(null,android.graphics.Typeface.BOLD);
+        content.addView(h,new LinearLayout.LayoutParams(-1,48));
+        if(subtitle!=null){
+            TextView s=tv(subtitle,14);
+            s.setTextColor(Color.GRAY);
+            content.addView(s,new LinearLayout.LayoutParams(-1,38));
+        }
+        return h;
+    }
+
+    void showPage(int page){
+        currentPage=page;
+        if(page==0) showHome();
+        else if(page==1) showSchedulePage();
+        else if(page==2) showSoundPage();
+        else if(page==3) showDevicePage();
+        else showAboutPage();
+    }
+
+    void showHome(){
+        clearContent();
+        heading("WaliBell","Bel Sekolah Otomatis");
+        TextView clock=tv("Jadwal Bel",16);
+        content.addView(clock,new LinearLayout.LayoutParams(-1,36));
+
+        LinearLayout card=new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(20,16,20,16);
+        card.setBackground(bg(Color.rgb(235,246,241)));
+        TextView t=tv("Jadwal berikutnya",15);
+        t.setTypeface(null,android.graphics.Typeface.BOLD);
+        card.addView(t,new LinearLayout.LayoutParams(-1,32));
+        Schedule next=schedules.size()>0?schedules.get(0):null;
+        card.addView(tv(next==null?"Belum ada jadwal":next.name+"  •  "+next.time,22),new LinearLayout.LayoutParams(-1,42));
+        content.addView(card,new LinearLayout.LayoutParams(-1,110));
+
+        Button manual=actionButton("▶  Bel Manual");
+        manual.setOnClickListener(v->{
+            if(!schedules.isEmpty())preview(schedules.get(0));
+            else Toast.makeText(this,"Belum ada jadwal",Toast.LENGTH_SHORT).show();
+        });
+        LinearLayout.LayoutParams mp=new LinearLayout.LayoutParams(-1,58);
+        mp.setMargins(0,18,0,0);
+        content.addView(manual,mp);
+
+        TextView status=tv("Status aplikasi\nAktif • Jadwal otomatis berjalan",16);
+        status.setPadding(18,12,18,12);
+        status.setBackground(bg(Color.rgb(245,247,246)));
+        content.addView(status,new LinearLayout.LayoutParams(-1,76));
+    }
+
+    void showSchedulePage(){
+        clearContent();
+        heading("Jadwal Bel","Atur waktu dan suara untuk setiap bel");
         list=new LinearLayout(this);
         list.setOrientation(LinearLayout.VERTICAL);
-
         ScrollView sv=new ScrollView(this);
         sv.setFillViewport(true);
         sv.addView(list);
-        r.addView(sv,new LinearLayout.LayoutParams(-1,0,1));
-
-        setContentView(r);
+        content.addView(sv,new LinearLayout.LayoutParams(-1,0,1));
         render();
+    }
+
+    void showSoundPage(){
+        clearContent();
+        heading("Suara","Kelola suara yang digunakan setiap jadwal");
+        LinearLayout box=new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        for(Schedule s:schedules){
+            LinearLayout row=new LinearLayout(this);
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            row.setGravity(Gravity.CENTER_VERTICAL);
+            row.setPadding(12,6,4,6);
+            row.setBackground(bg(Color.rgb(245,247,246)));
+            TextView name=tv("♫  "+s.name+"\n    "+s.audioName,14);
+            row.addView(name,new LinearLayout.LayoutParams(0,62,1));
+            Button b=actionButton("Suara");
+            b.setOnClickListener(v->chooseAudio(s.id));
+            row.addView(b,new LinearLayout.LayoutParams(82,50));
+            LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(-1,72);
+            rp.setMargins(0,0,0,8);
+            box.addView(row,rp);
+        }
+        ScrollView sv=new ScrollView(this);
+        sv.addView(box);
+        content.addView(sv,new LinearLayout.LayoutParams(-1,0,1));
+    }
+
+    void showDevicePage(){
+        clearContent();
+        heading("Perangkat","Pengaturan keluaran suara");
+        TextView out=tv("🔊  Output suara\n\n• Speaker HP (bawaan)\n• Bluetooth\n• USB / OTG",16);
+        out.setPadding(18,12,18,12);
+        out.setBackground(bg(Color.rgb(245,247,246)));
+        content.addView(out,new LinearLayout.LayoutParams(-1,150));
+        TextView vol=tv("Volume Bel\n\n──────────────  80%",16);
+        vol.setPadding(18,12,18,12);
+        content.addView(vol,new LinearLayout.LayoutParams(-1,100));
+        TextView note=tv("Notifikasi\n\nBel akan memberi pemberitahuan saat jadwal diputar.",15);
+        note.setPadding(18,12,18,12);
+        note.setBackground(bg(Color.rgb(235,246,241)));
+        content.addView(note,new LinearLayout.LayoutParams(-1,100));
+    }
+
+    void showAboutPage(){
+        clearContent();
+        heading("Tentang","Informasi aplikasi");
+        TextView about=tv("WaliBell\n\nVersi 3.3\n\nAplikasi bel sekolah otomatis\nMudah, Praktis, dan Andal\n\nKasmir, S.Pd\nSMPN 1 Sungai Batang\nIndragiri Hilir - Riau",18);
+        about.setGravity(Gravity.CENTER);
+        about.setPadding(20,20,20,20);
+        about.setBackground(bg(Color.rgb(235,246,241)));
+        content.addView(about,new LinearLayout.LayoutParams(-1,300));
     }
 
     void render(){
