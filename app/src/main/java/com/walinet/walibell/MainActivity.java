@@ -4,6 +4,9 @@ import android.Manifest;
 import android.app.*;
 import android.content.*;
 import android.content.pm.PackageManager;
+import android.bluetooth.BluetoothAdapter;
+import android.provider.Settings;
+import android.provider.OpenableColumns;
 import android.graphics.Color;
 import android.graphics.Insets;
 import android.graphics.Typeface;
@@ -48,6 +51,7 @@ public class MainActivity extends Activity {
         TextView v=new TextView(this);v.setText(s);v.setTextSize(z);v.setTextColor(DARK);v.setGravity(Gravity.CENTER_VERTICAL);return v;
     }
     GradientDrawable bg(int color){GradientDrawable g=new GradientDrawable();g.setColor(color);g.setCornerRadius(dp(14));return g;}
+GradientDrawable stadiumBg(int color){GradientDrawable g=new GradientDrawable();g.setColor(color);g.setCornerRadius(dp(1000));return g;}
     Button actionButton(String text){
         Button b=new Button(this);b.setText(text);b.setTextSize(13);b.setTextColor(DARK);b.setAllCaps(false);
         b.setGravity(Gravity.CENTER);b.setPadding(dp(4),0,dp(4),0);b.setBackground(bg(Color.rgb(231,243,240)));
@@ -109,25 +113,39 @@ public class MainActivity extends Activity {
     }
 
     void showHome(){
-        clearContent();content.addView(header("WaliBell","Bel Sekolah Otomatis"),new LinearLayout.LayoutParams(-1,dp(78)));
-        LinearLayout date=card();TextView d=tv("SMPN 1 Sungai Batang",15);d.setTypeface(Typeface.DEFAULT,Typeface.BOLD);date.addView(d,new LinearLayout.LayoutParams(-1,dp(26)));
+        clearContent();
+        content.addView(header("WaliBell","Bel Sekolah Otomatis"),new LinearLayout.LayoutParams(-1,dp(78)));
+        LinearLayout date=card();
+        TextView d=tv("SMPN 1 Sungai Batang",15);d.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+        date.addView(d,new LinearLayout.LayoutParams(-1,dp(26)));
         TextView clock=tv("Jadwal Bel",15);date.addView(clock,new LinearLayout.LayoutParams(-1,dp(25)));
-        Schedule next=schedules.isEmpty()?null:schedules.get(0);TextView nx=tv(next==null?"Belum ada jadwal":next.name+"   •   "+next.time,25);nx.setTypeface(Typeface.DEFAULT,Typeface.BOLD);date.addView(nx,new LinearLayout.LayoutParams(-1,dp(42)));
+        Schedule next=schedules.isEmpty()?null:schedules.get(0);
+        TextView nx=tv(next==null?"Belum ada jadwal":next.name+"   •   "+next.time,25);nx.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+        date.addView(nx,new LinearLayout.LayoutParams(-1,dp(42)));
         LinearLayout.LayoutParams dp=new LinearLayout.LayoutParams(-1,dp(112));dp.setMargins(dp(8),dp(8),dp(8),0);content.addView(date,dp);
-        LinearLayout upcoming=card();TextView ut=tv("Jadwal berikutnya",15);ut.setTypeface(Typeface.DEFAULT,Typeface.BOLD);upcoming.addView(ut,new LinearLayout.LayoutParams(-1,30));
-        upcoming.addView(tv(next==null?"Belum ada jadwal":next.name+"\n"+next.time,20),new LinearLayout.LayoutParams(-1,dp(58)));
-        LinearLayout.LayoutParams up=new LinearLayout.LayoutParams(-1,dp(96));up.setMargins(dp(8),dp(8),dp(8),0);content.addView(upcoming,up);
-        Button manual=iconButton("Bel Manual",R.drawable.ic_bell);manual.setTextColor(Color.WHITE);manual.setBackground(bg(Color.rgb(13,148,136)));manual.setOnClickListener(v->{if(next!=null)preview(next);});
-        LinearLayout.LayoutParams mp=new LinearLayout.LayoutParams(-1,dp(48));mp.setMargins(dp(8),dp(8),dp(8),0);content.addView(manual,mp);
-        LinearLayout status=card();TextView st=tv("Status aplikasi",16);st.setTypeface(Typeface.DEFAULT,Typeface.BOLD);status.addView(st,new LinearLayout.LayoutParams(-1,30));status.addView(tv("Aktif  •  Semua jadwal berjalan",14),new LinearLayout.LayoutParams(-1,30));
-        LinearLayout.LayoutParams sp=new LinearLayout.LayoutParams(-1,dp(66));sp.setMargins(dp(8),dp(8),dp(8),0);content.addView(status,sp);
+
+        LinearLayout upcoming=card();upcoming.setPadding(dp(14),dp(14),dp(14),dp(12));
+        TextView ut=tv("Jadwal berikutnya",15);ut.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+        upcoming.addView(ut,new LinearLayout.LayoutParams(-1,dp(30)));
+        upcoming.addView(tv(next==null?"Belum ada jadwal":next.name+"\\n"+next.time,20),new LinearLayout.LayoutParams(-1,dp(64)));
+        LinearLayout.LayoutParams up=new LinearLayout.LayoutParams(-1,dp(108));up.setMargins(dp(8),dp(8),dp(8),0);content.addView(upcoming,up);
+
+        Button manual=iconButton("Bel Manual",R.drawable.ic_bell);manual.setTextColor(Color.WHITE);manual.setBackground(stadiumBg(Color.rgb(13,148,136)));
+        manual.setOnClickListener(v->{if(next!=null)preview(next);});
+        LinearLayout.LayoutParams mp=new LinearLayout.LayoutParams(-1,dp(50));mp.setMargins(dp(8),dp(8),dp(8),0);content.addView(manual,mp);
+
+        LinearLayout status=card();status.setPadding(dp(14),dp(14),dp(14),dp(12));
+        TextView st=tv("Status aplikasi",16);st.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+        status.addView(st,new LinearLayout.LayoutParams(-1,dp(30)));
+        status.addView(tv("Aktif  •  Semua jadwal berjalan",14),new LinearLayout.LayoutParams(-1,dp(30)));
+        LinearLayout.LayoutParams sp=new LinearLayout.LayoutParams(-1,dp(76));sp.setMargins(dp(8),dp(8),dp(8),0);content.addView(status,sp);
     }
 
     void showSchedulePage(){
         clearContent();content.addView(header("Jadwal Bel","Atur waktu dan suara untuk setiap bel"),new LinearLayout.LayoutParams(-1,dp(78)));
         list=new LinearLayout(this);list.setOrientation(LinearLayout.VERTICAL);ScrollView sv=new ScrollView(this);sv.setFillViewport(true);sv.addView(list);
         content.addView(sv,new LinearLayout.LayoutParams(-1,0,1));
-        Button add=iconButton("Tambah Jadwal",R.drawable.ic_add);add.setTextColor(Color.WHITE);add.setTextSize(14);add.setBackground(bg(Color.rgb(13,148,136)));add.setOnClickListener(v->addSchedule());
+        Button add=iconButton("Tambah Jadwal",R.drawable.ic_add);add.setTextColor(Color.WHITE);add.setTextSize(14);add.setBackground(stadiumBg(Color.rgb(13,148,136)));add.setOnClickListener(v->addSchedule());
         LinearLayout.LayoutParams ap=new LinearLayout.LayoutParams(-1,dp(48));ap.setMargins(dp(8),dp(6),dp(8),dp(8));content.addView(add,ap);render();
     }
 
@@ -157,7 +175,7 @@ public class MainActivity extends Activity {
             Button b=actionButton("Suara");b.setOnClickListener(v->chooseAudio(s.id));row.addView(b,new LinearLayout.LayoutParams(dp(70),dp(42)));
             LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(-1,dp(70));rp.setMargins(dp(8),dp(4),dp(8),0);box.addView(row,rp);
         }
-        Button add=iconButton("Tambah Suara Baru",R.drawable.ic_add);add.setTextColor(Color.WHITE);add.setBackground(bg(Color.rgb(13,148,136)));add.setOnClickListener(v->{if(!schedules.isEmpty())chooseAudio(schedules.get(0).id);});
+        Button add=iconButton("Tambah Suara Baru",R.drawable.ic_add);add.setTextColor(Color.WHITE);add.setBackground(stadiumBg(Color.rgb(13,148,136)));add.setOnClickListener(v->{if(!schedules.isEmpty())chooseAudio(schedules.get(0).id);});
         LinearLayout.LayoutParams ap=new LinearLayout.LayoutParams(-1,dp(48));ap.setMargins(dp(8),dp(8),dp(8),dp(8));box.addView(add,ap);
         ScrollView sv=new ScrollView(this);sv.addView(box);content.addView(sv,new LinearLayout.LayoutParams(-1,0,1));
     }
@@ -165,10 +183,56 @@ public class MainActivity extends Activity {
     void showDevicePage(){
         clearContent();content.addView(header("Perangkat","Pengaturan keluaran suara"),new LinearLayout.LayoutParams(-1,dp(78)));
         LinearLayout out=card();TextView ot=tv("Output Suara",17);ot.setTypeface(Typeface.DEFAULT,Typeface.BOLD);ot.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_volume,0,0,0);ot.setCompoundDrawablePadding(8);out.addView(ot,new LinearLayout.LayoutParams(-1,dp(32)));
-        RadioGroup rg=new RadioGroup(this);String[] opts={"Speaker HP (bawaan)","Bluetooth Speaker","Perangkat USB / OTG"};for(String x:opts){RadioButton rb=new RadioButton(this);rb.setText(x);rb.setTextSize(15);rb.setTextColor(DARK);rg.addView(rb,new RadioGroup.LayoutParams(-1,dp(38)));if(x.startsWith("Speaker"))rb.setChecked(true);}out.addView(rg,new LinearLayout.LayoutParams(-1,dp(120)));
+        RadioGroup rg=new RadioGroup(this);
+        String[] opts={"Speaker HP (bawaan)","Bluetooth Speaker","Perangkat USB / OTG"};
+        for(String x:opts){
+            RadioButton rb=new RadioButton(this);rb.setText(x);rb.setTextSize(15);rb.setTextColor(DARK);
+            rg.addView(rb,new RadioGroup.LayoutParams(-1,dp(38)));
+            if(x.startsWith("Speaker"))rb.setChecked(true);
+        }
+        rg.setOnCheckedChangeListener((group,checkedId)->{
+            RadioButton selected=group.findViewById(checkedId);
+            if(selected!=null&&selected.getText().toString().startsWith("Bluetooth"))ensureBluetoothReady();
+        });
+        out.addView(rg,new LinearLayout.LayoutParams(-1,dp(120)));
         LinearLayout.LayoutParams op=new LinearLayout.LayoutParams(-1,dp(180));op.setMargins(dp(8),dp(8),dp(8),0);content.addView(out,op);
-        LinearLayout vol=card();vol.addView(tv("Volume Bel",17),new LinearLayout.LayoutParams(-1,dp(30)));SeekBar sb=new SeekBar(this);sb.setProgress(80);vol.addView(sb,new LinearLayout.LayoutParams(-1,dp(42)));LinearLayout.LayoutParams vp=new LinearLayout.LayoutParams(-1,dp(82));vp.setMargins(dp(8),dp(6),dp(8),0);content.addView(vol,vp);
-        LinearLayout note=card();TextView nt=tv("Notifikasi\nTampilkan notifikasi saat bel diputar",15);nt.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_bell,0,0,0);nt.setCompoundDrawablePadding(8);note.addView(nt,new LinearLayout.LayoutParams(-1,dp(58)));Switch sw=new Switch(this);sw.setChecked(true);sw.setText("Aktif");note.addView(sw,new LinearLayout.LayoutParams(-1,dp(42)));LinearLayout.LayoutParams np=new LinearLayout.LayoutParams(-1,dp(112));np.setMargins(dp(8),dp(6),dp(8),0);content.addView(note,np);
+
+        LinearLayout vol=card();vol.addView(tv("Volume Bel",17),new LinearLayout.LayoutParams(-1,dp(30)));
+        SeekBar sb=new SeekBar(this);sb.setProgress(80);vol.addView(sb,new LinearLayout.LayoutParams(-1,dp(42)));
+        LinearLayout.LayoutParams vp=new LinearLayout.LayoutParams(-1,dp(82));vp.setMargins(dp(8),dp(6),dp(8),0);content.addView(vol,vp);
+
+        LinearLayout note=card();TextView nt=tv("Notifikasi\\nTampilkan notifikasi saat bel diputar",15);nt.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_bell,0,0,0);nt.setCompoundDrawablePadding(8);note.addView(nt,new LinearLayout.LayoutParams(-1,dp(58)));
+        Switch sw=new Switch(this);sw.setChecked(true);sw.setText("Aktif");note.addView(sw,new LinearLayout.LayoutParams(-1,dp(42)));
+        LinearLayout.LayoutParams np=new LinearLayout.LayoutParams(-1,dp(112));np.setMargins(dp(8),dp(6),dp(8),0);content.addView(note,np);
+    }
+
+    void ensureBluetoothReady(){
+        BluetoothAdapter adapter=BluetoothAdapter.getDefaultAdapter();
+        if(adapter==null){
+            new AlertDialog.Builder(this).setTitle("Bluetooth tidak tersedia").setMessage("Perangkat ini tidak mendukung Bluetooth.").setPositiveButton("OK",null).show();
+            return;
+        }
+        if(Build.VERSION.SDK_INT>=31&&checkSelfPermission("android.permission.BLUETOOTH_CONNECT")!=PackageManager.PERMISSION_GRANTED){
+            requestPermissions(new String[]{"android.permission.BLUETOOTH_CONNECT"},910);
+            return;
+        }
+        if(!adapter.isEnabled()){
+            new AlertDialog.Builder(this).setTitle("Bluetooth belum aktif")
+                .setMessage("Aktifkan Bluetooth terlebih dahulu agar WaliBell dapat menggunakan speaker Bluetooth.")
+                .setPositiveButton("Buka Pengaturan", (d,w)->{
+                    try{startActivity(new Intent(Settings.ACTION_BLUETOOTH_SETTINGS));}catch(Exception e){startActivity(new Intent(Settings.ACTION_SETTINGS));}
+                }).setNegativeButton("Batal",null).show();
+        }else{
+            Toast.makeText(this,"Bluetooth aktif",Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override public void onRequestPermissionsResult(int requestCode,String[] permissions,int[] grantResults){
+        super.onRequestPermissionsResult(requestCode,permissions,grantResults);
+        if(requestCode==910){
+            if(grantResults.length>0&&grantResults[0]==PackageManager.PERMISSION_GRANTED)ensureBluetoothReady();
+            else Toast.makeText(this,"Izin Bluetooth diperlukan untuk mengecek status Bluetooth.",Toast.LENGTH_LONG).show();
+        }
     }
 
     void showAboutPage(){
@@ -277,8 +341,23 @@ public class MainActivity extends Activity {
     }
     @Override protected void onActivityResult(int r,int c,Intent d){
         super.onActivityResult(r,c,d);
-        if(r==PICK_AUDIO&&c==RESULT_OK&&d!=null&&d.getData()!=null){Uri u=d.getData();try{getContentResolver().takePersistableUriPermission(u,Intent.FLAG_GRANT_READ_URI_PERMISSION);}catch(Exception ignored){}Schedule s=null;for(Schedule x:schedules)if(x.id==editingId){s=x;break;}if(s==null)return;s.audioName="Audio dari HP";s.audioUri=u.toString();s.rawId=0;save();showPage(currentPage);BellReceiver.rescheduleAll(this);}
+        if(r==PICK_AUDIO&&c==RESULT_OK&&d!=null&&d.getData()!=null){Uri u=d.getData();try{getContentResolver().takePersistableUriPermission(u,Intent.FLAG_GRANT_READ_URI_PERMISSION);}catch(Exception ignored){}Schedule s=null;for(Schedule x:schedules)if(x.id==editingId){s=x;break;}if(s==null)return;s.audioName=getAudioDisplayName(u);s.audioUri=u.toString();s.rawId=0;save();showPage(currentPage);BellReceiver.rescheduleAll(this);}
     }
+    String getAudioDisplayName(Uri uri){
+        try{
+            if("content".equalsIgnoreCase(uri.getScheme())){
+                android.database.Cursor cur=getContentResolver().query(uri,new String[]{OpenableColumns.DISPLAY_NAME},null,null,null);
+                if(cur!=null){
+                    try{if(cur.moveToFirst()){String n=cur.getString(cur.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME));if(n!=null&&!n.isEmpty())return n;}}
+                    finally{cur.close();}
+                }
+            }
+            String p=uri.getPath();
+            if(p!=null){String n=new File(p).getName();if(n!=null&&!n.isEmpty())return n;}
+        }catch(Exception ignored){}
+        return "Audio dari HP";
+    }
+
     void save(){getSharedPreferences("schedule",0).edit().putString("data",serialize()).apply();}
     String serialize(){StringBuilder b=new StringBuilder();for(Schedule s:schedules)b.append(s.id).append('|').append(s.time).append('|').append(s.name).append('|').append(s.audioName).append('|').append(s.audioUri==null?"":s.audioUri).append('|').append(s.rawId).append('|').append(s.daysMask).append('\n');return b.toString();}
 }
