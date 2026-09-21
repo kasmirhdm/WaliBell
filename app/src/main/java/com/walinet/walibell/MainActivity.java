@@ -33,7 +33,14 @@ public class MainActivity extends Activity {
     String[] names={"Masuk","Pelajaran 1","Istirahat","Masuk Setelah Istirahat","Pulang"};
     String[] times={"07:00","08:00","10:10","10:30","12:30"};
 
-    @Override public void onCreate(Bundle b){super.onCreate(b);load();build();BellReceiver.rescheduleAll(this);}
+    @Override public void onCreate(Bundle b){
+        super.onCreate(b);
+        load();
+        build();
+        BellReceiver.rescheduleAll(this);
+        startBellService();
+        new Handler().postDelayed(this::checkSystemProtections,700);
+    }
 
     void load(){
         schedules.clear();
@@ -45,6 +52,19 @@ public class MainActivity extends Activity {
             }catch(Exception ignored){}
         }
         if(schedules.isEmpty())for(int i=0;i<names.length;i++)schedules.add(new Schedule(i,times[i],names[i],"Belum ada suara",null,0));
+        // Bersihkan data uji coba yang terlihat pada V3.13 dan pulihkan jadwal Masuk bawaan.
+        for(Schedule s:schedules){
+            if("Pelajaran Pertama".equals(s.name)&&"20:13".equals(s.time)){
+                s.name="Masuk"; s.time="07:00"; s.audioName="Belum ada suara"; s.audioUri=null; s.rawId=0; s.daysMask=31;
+            }
+        }
+        Collections.sort(schedules,(a,b)->{
+            int ta=0,tb=0;
+            try{ta=Integer.parseInt(a.time.replace(":",""));}catch(Exception ignored){}
+            try{tb=Integer.parseInt(b.time.replace(":",""));}catch(Exception ignored){}
+            return Integer.compare(ta,tb);
+        });
+        save();
     }
 
     TextView tv(String s,int z){
@@ -107,6 +127,83 @@ GradientDrawable stadiumBg(int color){GradientDrawable g=new GradientDrawable();
     }
     void addGap(int h){Space s=new Space(this);content.addView(s,new LinearLayout.LayoutParams(1,h));}
 
+    void startBellService(){
+        try{
+            Intent in=new Intent(this,BellService.class);
+            if(Build.VERSION.SDK_INT>=26)startForegroundService(in);else startService(in);
+        }catch(Exception ignored){}
+    }
+
+    void checkSystemProtections(){
+        if(Build.VERSION.SDK_INT>=23){
+            android.os.PowerManager pm=(android.os.PowerManager)getSystemService(POWER_SERVICE);
+            if(pm!=null&&!pm.isIgnoringBatteryOptimizations(getPackageName())){
+                new AlertDialog.Builder(this).setTitle("Izinkan WaliBell berjalan di latar belakang")
+                    .setMessage("Agar bel tetap berbunyi saat layar terkunci atau aplikasi ditutup, izinkan WaliBell mengabaikan optimasi baterai.")
+                    .setPositiveButton("Izinkan",(d,w)->{
+                        try{
+                            Intent in=new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+                            in.setData(Uri.parse("package:"+getPackageName()));startActivity(in);
+                        }catch(Exception e){openAppSettings();}
+                    }).setNegativeButton("Nanti",null).show();
+                return;
+            }
+        }
+        if(Build.VERSION.SDK_INT>=31){
+            AlarmManager am=(AlarmManager)getSystemService(ALARM_SERVICE);
+            if(am!=null&&!am.canScheduleExactAlarms()){
+                new AlertDialog.Builder(this).setTitle("Izinkan alarm tepat waktu")
+                    .setMessage("WaliBell memerlukan izin alarm tepat agar bel berbunyi sesuai jadwal.")
+                    .setPositiveButton("Buka Pengaturan",(d,w)->{
+                        try{startActivity(new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,Uri.parse("package:"+getPackageName())));}
+                        catch(Exception e){startActivity(new Intent(Settings.ACTION_SETTINGS));}
+                    }).setNegativeButton("Nanti",null).show();
+                return;
+            }
+        }
+        if(Build.VERSION.SDK_INT>=33&&checkSelfPermission("android.permission.POST_NOTIFICATIONS")!=PackageManager.PERMISSION_GRANTED){
+            requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"},911);
+            return;
+        }
+        showAutostartGuideIfNeeded();
+    }
+
+    void openAppSettings(){
+        try{startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+getPackageName())));}catch(Exception ignored){}
+    }
+
+    void showAutostartGuideIfNeeded(){
+        if(getSharedPreferences("ui",0).getBoolean("autostart_prompt",false))return;
+        getSharedPreferences("ui",0).edit().putBoolean("autostart_prompt",true).apply();
+        new AlertDialog.Builder(this).setTitle("Aktifkan Autostart")
+            .setMessage("Pada Xiaomi, OPPO, vivo, realme dan beberapa HP lain, aktifkan Autostart/Izinkan berjalan otomatis untuk WaliBell agar sistem tidak menghentikan aplikasi di latar belakang.")
+            .setPositiveButton("Buka Pengaturan",(d,w)->openAutoStartSettings())
+            .setNegativeButton("Nanti",null).show();
+    }
+
+    void openAutoStartSettings(){
+        String m=Build.MANUFACTURER==null?"":Build.MANUFACTURER.toLowerCase(Locale.US);
+        try{
+            Intent in=null;
+            if(m.contains("xiaomi")||m.contains("redmi")||m.contains("poco")){
+                in=new Intent("miui.intent.action.OP_AUTO_START");in.setPackage("com.miui.securitycenter");
+            }else if(m.contains("vivo")){
+                in=new Intent("com.vivo.permissionmanager");in.setClassName("com.vivo.permissionmanager","com.vivo.permissionmanager.activity.BgStartUpManagerActivity");
+            }else if(m.contains("oppo")||m.contains("realme")){
+                in=new Intent("com.coloros.safecenter");in.setPackage("com.coloros.safecenter");
+            }else if(m.contains("huawei")||m.contains("honor")){
+                in=new Intent("com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity");in.setPackage("com.huawei.systemmanager");
+            }
+            if(in!=null){startActivity(in);return;}
+        }catch(Exception ignored){}
+        openAppSettings();
+    }
+
+    @Override protected void onResume(){
+        super.onResume();
+        try{BellReceiver.rescheduleAll(this);startBellService();}catch(Exception ignored){}
+    }
+
     void showPage(int page){
         currentPage=page;
         if(page==0)showHome();else if(page==1)showSchedulePage();else if(page==2)showSoundPage();else if(page==3)showDevicePage();else showAboutPage();
@@ -127,7 +224,7 @@ GradientDrawable stadiumBg(int color){GradientDrawable g=new GradientDrawable();
         LinearLayout upcoming=card();upcoming.setPadding(dp(14),dp(14),dp(14),dp(12));
         TextView ut=tv("Jadwal berikutnya",15);ut.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
         upcoming.addView(ut,new LinearLayout.LayoutParams(-1,dp(30)));
-        upcoming.addView(tv(next==null?"Belum ada jadwal":next.name+"\\n"+next.time,20),new LinearLayout.LayoutParams(-1,dp(64)));
+        upcoming.addView(tv(next==null?"Belum ada jadwal":next.name+"\n"+next.time,20),new LinearLayout.LayoutParams(-1,dp(64)));
         LinearLayout.LayoutParams up=new LinearLayout.LayoutParams(-1,dp(108));up.setMargins(dp(8),dp(8),dp(8),0);content.addView(upcoming,up);
 
         Button manual=iconButton("Bel Manual",R.drawable.ic_bell);manual.setTextColor(Color.WHITE);manual.setBackground(stadiumBg(Color.rgb(13,148,136)));
@@ -201,7 +298,7 @@ GradientDrawable stadiumBg(int color){GradientDrawable g=new GradientDrawable();
         SeekBar sb=new SeekBar(this);sb.setProgress(80);vol.addView(sb,new LinearLayout.LayoutParams(-1,dp(42)));
         LinearLayout.LayoutParams vp=new LinearLayout.LayoutParams(-1,dp(82));vp.setMargins(dp(8),dp(6),dp(8),0);content.addView(vol,vp);
 
-        LinearLayout note=card();TextView nt=tv("Notifikasi\\nTampilkan notifikasi saat bel diputar",15);nt.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_bell,0,0,0);nt.setCompoundDrawablePadding(8);note.addView(nt,new LinearLayout.LayoutParams(-1,dp(58)));
+        LinearLayout note=card();TextView nt=tv("Notifikasi\nTampilkan notifikasi saat bel diputar",15);nt.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_bell,0,0,0);nt.setCompoundDrawablePadding(8);note.addView(nt,new LinearLayout.LayoutParams(-1,dp(58)));
         Switch sw=new Switch(this);sw.setChecked(true);sw.setText("Aktif");note.addView(sw,new LinearLayout.LayoutParams(-1,dp(42)));
         LinearLayout.LayoutParams np=new LinearLayout.LayoutParams(-1,dp(112));np.setMargins(dp(8),dp(6),dp(8),0);content.addView(note,np);
     }
@@ -229,7 +326,7 @@ GradientDrawable stadiumBg(int color){GradientDrawable g=new GradientDrawable();
 
     @Override public void onRequestPermissionsResult(int requestCode,String[] permissions,int[] grantResults){
         super.onRequestPermissionsResult(requestCode,permissions,grantResults);
-        if(requestCode==910){
+        if(requestCode==911){showAutostartGuideIfNeeded();return;}\n        if(requestCode==910){
             if(grantResults.length>0&&grantResults[0]==PackageManager.PERMISSION_GRANTED)ensureBluetoothReady();
             else Toast.makeText(this,"Izin Bluetooth diperlukan untuk mengecek status Bluetooth.",Toast.LENGTH_LONG).show();
         }
