@@ -3,14 +3,16 @@ name: Build WaliBell APK
 on:
   workflow_dispatch:
   push:
+    branches: [ main ]
     paths:
-      - 'WaliBell_V3.2_Source.zip'
+      - 'app/**'
+      - 'build.gradle'
+      - 'settings.gradle'
       - '.github/workflows/build-apk.yml'
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -32,22 +34,22 @@ jobs:
         with:
           gradle-version: '8.13'
 
-      - name: Extract WaliBell source
+      - name: Verify audio assets
         run: |
-          rm -rf walibell
-          mkdir walibell
-          unzip -q WaliBell_V3.2_Source.zip -d walibell
-          test -f walibell/settings.gradle
-          test -f walibell/app/build.gradle
+          test -f app/src/main/res/raw/bel_masuk.mp3
+          test -f app/src/main/res/raw/bel_pelajaran.mp3
+          test -f app/src/main/res/raw/bel_istirahat.mp3
+          test -f app/src/main/res/raw/bel_masuk_istirahat.mp3
+          test -f app/src/main/res/raw/bel_pulang.mp3
+          test -f app/src/main/res/drawable/school_logo.jpg
 
       - name: Build debug APK
-        working-directory: walibell
         run: gradle assembleDebug --no-daemon
 
       - name: Rename APK
         run: |
           mkdir -p release
-          cp walibell/app/build/outputs/apk/debug/app-debug.apk release/WaliBell_V3.2.apk
+          cp app/build/outputs/apk/debug/app-debug.apk release/WaliBell_V3.2.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
