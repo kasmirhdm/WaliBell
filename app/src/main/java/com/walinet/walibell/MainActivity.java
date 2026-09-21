@@ -270,7 +270,7 @@ public class MainActivity extends Activity {
         manual.setOnClickListener(v->{v.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);if(next!=null)preview(next);});
         LinearLayout.LayoutParams mp=new LinearLayout.LayoutParams(-1,dp(50));mp.setMargins(dp(8),dp(8),dp(8),0);content.addView(manual,mp);
         Button kiosk=iconButton("Mode Layar Penuh",R.drawable.ic_devices);kiosk.setTextColor(Color.WHITE);kiosk.setBackground(stadiumBg(themeColor()));kiosk.setOnClickListener(v->showKioskPage());
-        LinearLayout kp=new LinearLayout.LayoutParams(-1,dp(48));kp.setMargins(dp(8),dp(6),dp(8),0);content.addView(kiosk,kp);
+        LinearLayout.LayoutParams kp=new LinearLayout.LayoutParams(-1,dp(48));kp.setMargins(dp(8),dp(6),dp(8),0);content.addView(kiosk,kp);
 
         LinearLayout status=card();status.setPadding(dp(14),dp(14),dp(14),dp(12));
         TextView st=tv("Status aplikasi",16);st.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
