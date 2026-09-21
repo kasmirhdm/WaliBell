@@ -218,7 +218,7 @@ public class MainActivity extends Activity {
     void save(){getSharedPreferences("schedule",0).edit().putString("data",serialize()).apply();}
     String serialize(){
         StringBuilder b=new StringBuilder();
-        for(Schedule s:schedules)b.append(s.id).append('|').append(s.time).append('|').append(s.name).append('|').append(s.audioName).append('|').append(s.audioUri==null?"":s.audioUri).append('|').append(s.rawId).append('\\n');
+        for(Schedule s:schedules)b.append(s.id).append('|').append(s.time).append('|').append(s.name).append('|').append(s.audioName).append('|').append(s.audioUri==null?"":s.audioUri).append('|').append(s.rawId).append('\n');
         return b.toString();
     }
 }
