@@ -10,6 +10,7 @@ import android.media.MediaRecorder;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.*;
+import android.graphics.Insets;
 import android.view.*;
 import android.widget.*;
 import java.io.File;
@@ -95,8 +96,31 @@ public class MainActivity extends Activity {
             nav.addView(b,new LinearLayout.LayoutParams(0,62,1));
             b.setOnClickListener(v->showPage(page));
         }
-        root.addView(nav,new LinearLayout.LayoutParams(-1,72));
+        root.addView(nav,new LinearLayout.LayoutParams(-1,-2));
+
+        getWindow().setStatusBarColor(Color.WHITE);
+        getWindow().setNavigationBarColor(Color.WHITE);
+        if(Build.VERSION.SDK_INT>=26){
+            getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR|View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
+        }
+
+        root.setOnApplyWindowInsetsListener((v,insets)->{
+            int top=0,bottom=0;
+            if(Build.VERSION.SDK_INT>=30){
+                Insets bars=insets.getInsets(WindowInsets.Type.systemBars());
+                top=bars.top;
+                bottom=bars.bottom;
+            }else{
+                top=insets.getSystemWindowInsetTop();
+                bottom=insets.getSystemWindowInsetBottom();
+            }
+            root.setPadding(0,top,0,0);
+            nav.setPadding(4,6,4,Math.max(10,bottom+10));
+            return insets;
+        });
+
         setContentView(root);
+        root.requestApplyInsets();
         showPage(1);
     }
 
