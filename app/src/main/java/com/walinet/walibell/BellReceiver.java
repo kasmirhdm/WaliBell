@@ -22,7 +22,7 @@ public class BellReceiver extends BroadcastReceiver {
         if(data.isEmpty()) return;
         for(String line:data.split("\n")){
             try{
-                String[] p=line.split("\|",-1); if(p.length<6)continue;
+                String[] p=line.split("\\|",-1); if(p.length<6)continue;
                 int id=Integer.parseInt(p[0]); String time=p[1]; String uri=p[4]; int raw=Integer.parseInt(p[5]);
                 String[] hm=time.split(":"); if(hm.length!=2)continue;
                 Calendar cal=Calendar.getInstance(); cal.set(Calendar.HOUR_OF_DAY,Integer.parseInt(hm[0])); cal.set(Calendar.MINUTE,Integer.parseInt(hm[1])); cal.set(Calendar.SECOND,0); cal.set(Calendar.MILLISECOND,0);
