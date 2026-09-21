@@ -1,8 +1,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Android 12- -->
-    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32"/>
-    <!-- Android 13+: WaliBell is an exact, user-facing school-bell scheduler. -->
-    <uses-permission android:name="android.permission.USE_EXACT_ALARM"/>
+    <!-- WaliBell's core function requires user-controlled exact alarms. -->
+    <!-- Keep SCHEDULE_EXACT_ALARM without maxSdkVersion so Android 12+ exposes
+         the "Alarms & reminders" special-access page. Android documents that
+         an app should use either SCHEDULE_EXACT_ALARM or USE_EXACT_ALARM,
+         not both on the same device. We intentionally use SCHEDULE_EXACT_ALARM
+         because WaliBell must let the user explicitly grant/revoke this access. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation"/>
