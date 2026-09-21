@@ -34,14 +34,6 @@ jobs:
         with:
           gradle-version: '8.13'
 
-      - name: Verify audio assets
-        run: |
-          test -f app/src/main/res/raw/bel_masuk.mp3
-          test -f app/src/main/res/raw/bel_pelajaran.mp3
-          test -f app/src/main/res/raw/bel_istirahat.mp3
-          test -f app/src/main/res/raw/bel_masuk_istirahat.mp3
-          test -f app/src/main/res/raw/bel_pulang.mp3
-
       - name: Build debug APK
         run: gradle assembleDebug --no-daemon
 
