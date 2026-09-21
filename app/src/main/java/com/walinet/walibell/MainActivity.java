@@ -558,7 +558,7 @@ public class MainActivity extends ComponentActivity {
         LinearLayout page=new LinearLayout(this);page.setOrientation(LinearLayout.VERTICAL);
         LinearLayout box=card();box.setGravity(Gravity.CENTER);
         TextView n=tv("WaliBell",28);n.setTypeface(Typeface.create("sans-serif-medium",Typeface.BOLD));n.setGravity(Gravity.CENTER);n.setTextColor(themeColor());box.addView(n,new LinearLayout.LayoutParams(-1,dp(48)));
-        TextView v=tv("Versi 4.5\n\nAplikasi bel sekolah otomatis\nMudah, Praktis, dan Andal\n\nKasmir, S.Pd\nKepala Sekolah\nSMPN 1 Sungai Batang\nIndragiri Hilir - Riau",16);v.setGravity(Gravity.CENTER);box.addView(v,new LinearLayout.LayoutParams(-1,dp(210)));
+        TextView v=tv("Versi 4.6\n\nAplikasi bel sekolah otomatis\nMudah, Praktis, dan Andal\n\nKasmir, S.Pd\nKepala Sekolah\nSMPN 1 Sungai Batang\nIndragiri Hilir - Riau",16);v.setGravity(Gravity.CENTER);box.addView(v,new LinearLayout.LayoutParams(-1,dp(210)));
         LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-1,dp(300));bp.setMargins(dp(8),dp(8),dp(8),0);page.addView(box,bp);
         TextView quote=tv("“Disiplin dimulai dari waktu”",18);quote.setTextColor(themeColor());quote.setGravity(Gravity.CENTER);page.addView(quote,new LinearLayout.LayoutParams(-1,dp(58)));
         LinearLayout tools=card();TextView th=tv("Tampilan & Alat",17);th.setTypeface(Typeface.create("sans-serif-medium",Typeface.BOLD));tools.addView(th,new LinearLayout.LayoutParams(-1,dp(32)));
