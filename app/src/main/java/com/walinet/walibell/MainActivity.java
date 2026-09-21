@@ -543,7 +543,7 @@ public class MainActivity extends ComponentActivity {
         Button backupBtn=actionButton("Backup Data Jadwal & Suara");backupBtn.setOnClickListener(v2->backupData());tools.addView(backupBtn,new LinearLayout.LayoutParams(-1,dp(44)));
         Button restoreBtn=actionButton("Restore Data");restoreBtn.setOnClickListener(v2->restoreData());tools.addView(restoreBtn,new LinearLayout.LayoutParams(-1,dp(44)));
         Button alarmBtn=actionButton("Cek Alarm & Pengingat");alarmBtn.setOnClickListener(v2->showExactAlarmStatus());tools.addView(alarmBtn,new LinearLayout.LayoutParams(-1,dp(44)));
-        LinearLayout.LayoutParams tp=new LinearLayout.LayoutParams(-1,dp(294));tp.setMargins(dp(8),dp(8),dp(8),dp(8));page.addView(tools,tp);
+        LinearLayout.LayoutParams tp=new LinearLayout.LayoutParams(-1,dp(350));tp.setMargins(dp(8),dp(8),dp(8),dp(8));page.addView(tools,tp);
         TextView tip=tv("Backup menyimpan jadwal, hari, dan file suara ke satu paket ZIP.",13);tip.setPadding(dp(12),dp(4),dp(12),dp(12));page.addView(tip,new LinearLayout.LayoutParams(-1,dp(42)));
         ScrollView sv=new ScrollView(this);sv.setFillViewport(true);sv.addView(page);content.addView(sv,new LinearLayout.LayoutParams(-1,0,1));
     }
