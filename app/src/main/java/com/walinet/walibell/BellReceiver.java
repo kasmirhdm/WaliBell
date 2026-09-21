@@ -3,11 +3,13 @@ package com.walinet.walibell;
 import android.app.*;
 import android.content.*;
 import java.util.*;
+import java.text.SimpleDateFormat;
 
 public class BellReceiver extends BroadcastReceiver {
     @Override public void onReceive(Context c,Intent i){
         int raw=i.getIntExtra("raw",0);
         String uri=i.getStringExtra("uri");
+        logHistory(c,i.getStringExtra("name"),i.getStringExtra("time"));
         try{
             Intent service=new Intent(c,BellService.class);
             service.putExtra("raw",raw);
@@ -16,6 +18,19 @@ public class BellReceiver extends BroadcastReceiver {
             else c.startService(service);
         }catch(Exception ignored){}
         rescheduleAll(c);
+    }
+
+    static void logHistory(Context c,String name,String time){
+        String stamp=new SimpleDateFormat("dd/MM/yyyy HH:mm:ss",Locale.getDefault()).format(new Date());
+        String line=stamp+"  •  "+(name==null||name.isEmpty()?"Bel":name)+(time==null||time.isEmpty()?"":"  •  "+time);
+        android.content.SharedPreferences sp=c.getSharedPreferences("history",0);
+        String old=sp.getString("data","");
+        String[] arr=old.isEmpty()?new String[0]:old.split("\\n");
+        StringBuilder b=new StringBuilder();
+        int start=Math.max(0,arr.length-99);
+        for(int j=start;j<arr.length;j++){if(!arr[j].trim().isEmpty())b.append(arr[j]).append("\\n");}
+        b.append(line).append("\\n");
+        sp.edit().putString("data",b.toString()).apply();
     }
 
     static int dayBit(int calendarDay){
@@ -68,7 +83,7 @@ public class BellReceiver extends BroadcastReceiver {
                 Intent in=new Intent(c,BellReceiver.class);
                 in.setAction("com.walinet.walibell.BELL_"+id+"_"+dayIndex);
                 in.putExtra("raw",raw);
-                in.putExtra("uri",uri);
+                in.putExtra("uri",uri);in.putExtra("name",p[2]);in.putExtra("time",p[1]);
                 PendingIntent pi=PendingIntent.getBroadcast(c,id*10+dayIndex,in,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
                 if(android.os.Build.VERSION.SDK_INT>=31&&!am.canScheduleExactAlarms())continue;
                 if(android.os.Build.VERSION.SDK_INT>=23)am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,best.getTimeInMillis(),pi);
