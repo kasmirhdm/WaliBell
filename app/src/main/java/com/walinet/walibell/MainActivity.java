@@ -326,7 +326,8 @@ GradientDrawable stadiumBg(int color){GradientDrawable g=new GradientDrawable();
 
     @Override public void onRequestPermissionsResult(int requestCode,String[] permissions,int[] grantResults){
         super.onRequestPermissionsResult(requestCode,permissions,grantResults);
-        if(requestCode==911){showAutostartGuideIfNeeded();return;}\n        if(requestCode==910){
+        if(requestCode==911){showAutostartGuideIfNeeded();return;}
+        if(requestCode==910){
             if(grantResults.length>0&&grantResults[0]==PackageManager.PERMISSION_GRANTED)ensureBluetoothReady();
             else Toast.makeText(this,"Izin Bluetooth diperlukan untuk mengecek status Bluetooth.",Toast.LENGTH_LONG).show();
         }
