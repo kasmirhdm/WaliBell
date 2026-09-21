@@ -4,5 +4,5 @@ dependencies {
 }
 
 android { namespace 'com.walinet.walibell'; compileSdk 36
- defaultConfig { applicationId 'com.walinet.walibell'; minSdk 23; targetSdk 35; versionCode 56; versionName '4.6' }
+ defaultConfig { applicationId 'com.walinet.walibell'; minSdk 23; targetSdk 35; versionCode 57; versionName '4.7' }
 }
