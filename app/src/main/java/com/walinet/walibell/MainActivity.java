@@ -48,6 +48,7 @@ public class MainActivity extends ComponentActivity {
 
     // Permission flow: notification -> exact alarm -> battery optimization.
     ActivityResultLauncher<String> notificationPermissionLauncher;
+    ActivityResultLauncher<Intent> exactAlarmSettingsLauncher;
     boolean protectionFlowStarted=false;
     boolean protectionIntroShown=false;
     boolean waitingForExactAlarmSettings=false;
@@ -67,13 +68,32 @@ public class MainActivity extends ComponentActivity {
             }
         );
 
+        exactAlarmSettingsLauncher=registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if(Build.VERSION.SDK_INT>=31){
+                    AlarmManager am=(AlarmManager)getSystemService(ALARM_SERVICE);
+                    if(am!=null && am.canScheduleExactAlarms()){
+                        waitingForExactAlarmSettings=false;
+                        BellReceiver.rescheduleAll(this);
+                        requestBatteryOptimizationPermission();
+                    }else{
+                        waitingForExactAlarmSettings=false;
+                        showExactAlarmStillMissing();
+                    }
+                }else{
+                    requestBatteryOptimizationPermission();
+                }
+            }
+        );
+
         load();
         build();
         BellReceiver.rescheduleAll(this);
         startBellService();
 
-        // Explain the purpose before asking for system access.
-        new Handler().postDelayed(this::showProtectionExplanation,700);
+        // Check exact-alarm access immediately after the UI is ready.
+        new Handler().postDelayed(this::requestExactAlarmPermission,700);
     }
 
     void load(){
@@ -232,7 +252,7 @@ public class MainActivity extends ComponentActivity {
                     "berbunyi tepat sesuai jadwal saat layar terkunci. Tekan Buka Pengaturan, " +
                     "lalu aktifkan WaliBell jika pilihan tersebut tersedia."
                 )
-                .setPositiveButton("Buka Pengaturan",(d,w)->openExactAlarmSettings())
+                .setPositiveButton("OK",(d,w)->openExactAlarmSettings())
                 .setNegativeButton("Nanti",null)
                 .show();
             return;
@@ -250,7 +270,7 @@ public class MainActivity extends ComponentActivity {
                 Uri.parse("package:"+getPackageName())
             );
             if(in.resolveActivity(getPackageManager())!=null){
-                startActivity(in);
+                exactAlarmSettingsLauncher.launch(in);
                 opened=true;
             }
         }catch(Exception ignored){}
@@ -262,7 +282,7 @@ public class MainActivity extends ComponentActivity {
         try{
             Intent generic=new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM);
             if(generic.resolveActivity(getPackageManager())!=null){
-                startActivity(generic);
+                exactAlarmSettingsLauncher.launch(generic);
                 opened=true;
             }
         }catch(Exception ignored){}
@@ -287,6 +307,18 @@ public class MainActivity extends ComponentActivity {
         }catch(Exception ignored){
             try{startActivity(new Intent(Settings.ACTION_SETTINGS));}catch(Exception ignored2){}
         }
+    }
+
+    void showExactAlarmStillMissing(){
+        new AlertDialog.Builder(this)
+            .setTitle("Izin Alarm & Pengingat belum aktif")
+            .setMessage(
+                "WaliBell belum mendapat akses Alarm & Pengingat. " +
+                "Tanpa izin ini jadwal bel tidak dapat dijamin berbunyi tepat saat HP terkunci."
+            )
+            .setPositiveButton("Coba Lagi",(d,w)->openExactAlarmSettings())
+            .setNegativeButton("Nanti",null)
+            .show();
     }
 
     void requestBatteryOptimizationPermission(){
