@@ -173,7 +173,7 @@ public class MainActivity extends Activity {
 
     void showAboutPage(){
         clearContent();content.addView(header("Tentang","Informasi aplikasi"),new LinearLayout.LayoutParams(-1,dp(78)));
-        LinearLayout box=card();box.setGravity(Gravity.CENTER);TextView n=tv("WaliBell",28);n.setTypeface(Typeface.DEFAULT,Typeface.BOLD);n.setGravity(Gravity.CENTER);box.addView(n,new LinearLayout.LayoutParams(-1,48));TextView v=tv("Versi 3.11\n\nAplikasi bel sekolah otomatis\nMudah, Praktis, dan Andal\n\nKasmir, S.Pd\nKepala Sekolah\nSMPN 1 Sungai Batang\nIndragiri Hilir - Riau",16);v.setGravity(Gravity.CENTER);box.addView(v,new LinearLayout.LayoutParams(-1,dp(210)));LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-1,dp(300));bp.setMargins(dp(8),dp(8),dp(8),0);content.addView(box,bp);
+        LinearLayout box=card();box.setGravity(Gravity.CENTER);TextView n=tv("WaliBell",28);n.setTypeface(Typeface.DEFAULT,Typeface.BOLD);n.setGravity(Gravity.CENTER);box.addView(n,new LinearLayout.LayoutParams(-1,48));TextView v=tv("Versi 3.12\n\nAplikasi bel sekolah otomatis\nMudah, Praktis, dan Andal\n\nKasmir, S.Pd\nKepala Sekolah\nSMPN 1 Sungai Batang\nIndragiri Hilir - Riau",16);v.setGravity(Gravity.CENTER);box.addView(v,new LinearLayout.LayoutParams(-1,dp(210)));LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-1,dp(300));bp.setMargins(dp(8),dp(8),dp(8),0);content.addView(box,bp);
         TextView quote=tv("“Disiplin dimulai dari waktu”",18);quote.setTextColor(GREEN);quote.setGravity(Gravity.CENTER);content.addView(quote,new LinearLayout.LayoutParams(-1,dp(58)));
     }
 
@@ -280,5 +280,5 @@ public class MainActivity extends Activity {
         if(r==PICK_AUDIO&&c==RESULT_OK&&d!=null&&d.getData()!=null){Uri u=d.getData();try{getContentResolver().takePersistableUriPermission(u,Intent.FLAG_GRANT_READ_URI_PERMISSION);}catch(Exception ignored){}Schedule s=null;for(Schedule x:schedules)if(x.id==editingId){s=x;break;}if(s==null)return;s.audioName="Audio dari HP";s.audioUri=u.toString();s.rawId=0;save();showPage(currentPage);BellReceiver.rescheduleAll(this);}
     }
     void save(){getSharedPreferences("schedule",0).edit().putString("data",serialize()).apply();}
-    String serialize(){StringBuilder b=new StringBuilder();for(Schedule s:schedules)b.append(s.id).append('|').append(s.time).append('|').append(s.name).append('|').append(s.audioName).append('|').append(s.audioUri==null?"":s.audioUri).append('|').append(s.rawId).append('\n');return b.toString();}
+    String serialize(){StringBuilder b=new StringBuilder();for(Schedule s:schedules)b.append(s.id).append('|').append(s.time).append('|').append(s.name).append('|').append(s.audioName).append('|').append(s.audioUri==null?"":s.audioUri).append('|').append(s.rawId).append('|').append(s.daysMask).append('\n');return b.toString();}
 }
