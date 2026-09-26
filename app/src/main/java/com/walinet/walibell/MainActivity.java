@@ -533,6 +533,7 @@ public class MainActivity extends ComponentActivity {
         heroText.addView(school,new LinearLayout.LayoutParams(-1,dp(24)));
         hero.addView(heroText,new LinearLayout.LayoutParams(0,-2,1));
         page.addView(hero,new LinearLayout.LayoutParams(-1,(int)(getResources().getDisplayMetrics().heightPixels*0.23f)));
+        addSchoolPhoto(page);
 
         // ===== CLOCK & STATUS CARD =====
         LinearLayout statusCard=card();
