@@ -41,8 +41,24 @@ jobs:
         with:
           gradle-version: '8.13'
 
-      - name: Build Play AAB
+      - name: Restore release keystore
+        env:
+          WALIBELL_KEYSTORE_BASE64: ${{ secrets.WALIBELL_KEYSTORE_BASE64 }}
         run: |
+          test -n "$WALIBELL_KEYSTORE_BASE64"
+          echo "$WALIBELL_KEYSTORE_BASE64" | base64 --decode > app/walibell-upload-key.jks
+          test -s app/walibell-upload-key.jks
+
+      - name: Build Play AAB
+        env:
+          RELEASE_KEYSTORE_FILE: walibell-upload-key.jks
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          test -n "$RELEASE_STORE_PASSWORD"
+          test -n "$RELEASE_KEY_ALIAS"
+          test -n "$RELEASE_KEY_PASSWORD"
           gradle clean bundleRelease --no-daemon
 
       - name: Verify AAB
