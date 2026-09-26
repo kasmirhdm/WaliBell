@@ -35,6 +35,7 @@ public class BellReceiver extends BroadcastReceiver {
             Intent service=new Intent(c,BellService.class);
             service.putExtra("raw",raw);
             service.putExtra("uri",uri);
+            service.putExtra("alarmKey",alarmKey);
             if(android.os.Build.VERSION.SDK_INT>=26)c.startForegroundService(service);
             else c.startService(service);
         }catch(Exception e){
@@ -160,20 +161,36 @@ public class BellReceiver extends BroadcastReceiver {
                     for(int d=0;d<7;d++){
                         Intent old=new Intent(c,BellReceiver.class);
                         old.setAction("com.walinet.walibell.BELL_"+id+"_"+d);
-                        PendingIntent pi=PendingIntent.getBroadcast(
-                            c,id*10+d,old,
-                            PendingIntent.FLAG_NO_CREATE|PendingIntent.FLAG_IMMUTABLE
-                        );
+                        PendingIntent pi;
+                        if(android.os.Build.VERSION.SDK_INT>=26){
+                            pi=PendingIntent.getForegroundService(
+                                c,id*10+d,old,
+                                PendingIntent.FLAG_NO_CREATE|PendingIntent.FLAG_IMMUTABLE
+                            );
+                        }else{
+                            pi=PendingIntent.getBroadcast(
+                                c,id*10+d,old,
+                                PendingIntent.FLAG_NO_CREATE|PendingIntent.FLAG_IMMUTABLE
+                            );
+                        }
                         if(pi!=null){
                             am.cancel(pi);
                             pi.cancel();
                         }
                         Intent backupOld=new Intent(c,BellReceiver.class);
                         backupOld.setAction("com.walinet.walibell.BELL_BACKUP_"+id+"_"+d);
-                        PendingIntent backupPi=PendingIntent.getBroadcast(
-                            c,id*10+d+200000,backupOld,
-                            PendingIntent.FLAG_NO_CREATE|PendingIntent.FLAG_IMMUTABLE
-                        );
+                        PendingIntent backupPi;
+                        if(android.os.Build.VERSION.SDK_INT>=26){
+                            backupPi=PendingIntent.getForegroundService(
+                                c,id*10+d+200000,backupOld,
+                                PendingIntent.FLAG_NO_CREATE|PendingIntent.FLAG_IMMUTABLE
+                            );
+                        }else{
+                            backupPi=PendingIntent.getBroadcast(
+                                c,id*10+d+200000,backupOld,
+                                PendingIntent.FLAG_NO_CREATE|PendingIntent.FLAG_IMMUTABLE
+                            );
+                        }
                         if(backupPi!=null){
                             am.cancel(backupPi);
                             backupPi.cancel();
@@ -238,10 +255,18 @@ public class BellReceiver extends BroadcastReceiver {
                 String alarmKey=id+"_"+best.getTimeInMillis();
                 in.putExtra("alarmKey",alarmKey);
 
-                PendingIntent pi=PendingIntent.getBroadcast(
-                    c,requestCode,in,
-                    PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE
-                );
+                PendingIntent pi;
+                if(android.os.Build.VERSION.SDK_INT>=26){
+                    pi=PendingIntent.getForegroundService(
+                        c,requestCode,in,
+                        PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE
+                    );
+                }else{
+                    pi=PendingIntent.getBroadcast(
+                        c,requestCode,in,
+                        PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE
+                    );
+                }
 
                 saveStatus(c,"next_alarm",
                     p[2]+" "+p[1]+" • "+new SimpleDateFormat("dd/MM/yyyy HH:mm:ss",Locale.getDefault()).format(best.getTime()));
@@ -287,10 +312,18 @@ public class BellReceiver extends BroadcastReceiver {
                 backupIn.putExtra("name",p[2]);
                 backupIn.putExtra("time",p[1]);
                 backupIn.putExtra("alarmKey",alarmKey);
-                PendingIntent backupPi=PendingIntent.getBroadcast(
-                    c,requestCode+200000,backupIn,
-                    PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE
-                );
+                PendingIntent backupPi;
+                if(android.os.Build.VERSION.SDK_INT>=26){
+                    backupPi=PendingIntent.getForegroundService(
+                        c,requestCode+200000,backupIn,
+                        PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE
+                    );
+                }else{
+                    backupPi=PendingIntent.getBroadcast(
+                        c,requestCode+200000,backupIn,
+                        PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE
+                    );
+                }
                 try{
                     am.setExactAndAllowWhileIdle(
                         AlarmManager.RTC_WAKEUP,best.getTimeInMillis(),backupPi
