@@ -183,10 +183,34 @@ public class MainActivity extends ComponentActivity {
     }
     LinearLayout navItem(String label,int icon,int page){
         LinearLayout item=new LinearLayout(this);item.setOrientation(LinearLayout.VERTICAL);item.setGravity(Gravity.CENTER);
+        item.setPadding(dp(4),dp(3),dp(4),dp(3));
         ImageView iv=new ImageView(this);iv.setImageResource(icon);iv.setContentDescription(label);
         item.addView(iv,new LinearLayout.LayoutParams(dp(22),dp(22)));
         TextView t=tv(label,11);t.setGravity(Gravity.CENTER);item.addView(t,new LinearLayout.LayoutParams(-1,dp(20)));
         item.setOnClickListener(v->showPage(page));return item;
+    }
+
+    void updateNavSelection(int page){
+        if(bottomNav==null)return;
+        int[] pages={PAGE_HOME,PAGE_SCHEDULE,PAGE_SOUND,PAGE_DEVICE,PAGE_ABOUT};
+        for(int i=0;i<bottomNav.getChildCount()&&i<pages.length;i++){
+            View child=bottomNav.getChildAt(i);
+            boolean selected=pages[i]==page;
+            child.setBackground(selected?stadiumBg(darkMode()?Color.rgb(20,83,76):Color.rgb(224,247,242)):null);
+            if(child instanceof LinearLayout){
+                LinearLayout item=(LinearLayout)child;
+                for(int j=0;j<item.getChildCount();j++){
+                    View v=item.getChildAt(j);
+                    if(v instanceof ImageView){
+                        ((ImageView)v).setColorFilter(selected?themeColor():(darkMode()?Color.rgb(148,163,158):Color.rgb(71,85,82)),android.graphics.PorterDuff.Mode.SRC_IN);
+                    }else if(v instanceof TextView){
+                        TextView t=(TextView)v;
+                        t.setTextColor(selected?themeColor():(darkMode()?Color.rgb(180,200,195):Color.rgb(71,85,82)));
+                        t.setTypeface(Typeface.create("sans-serif",selected?Typeface.BOLD:Typeface.NORMAL));
+                    }
+                }
+            }
+        }
     }
     TextView title(String text){
         TextView v=tv(text,23);v.setTypeface(Typeface.DEFAULT,Typeface.BOLD);v.setTextColor(Color.WHITE);return v;
@@ -454,6 +478,7 @@ public class MainActivity extends ComponentActivity {
         kioskMode=false;
         if(bottomNav!=null)bottomNav.setVisibility(View.VISIBLE);
         applySystemTheme();
+        updateNavSelection(page);
         if(page==PAGE_HOME)showHome();
         else if(page==PAGE_SCHEDULE)showSchedulePage();
         else if(page==PAGE_SOUND)showSoundPage();
