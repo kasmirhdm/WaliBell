@@ -90,15 +90,38 @@ public class MainActivity extends ComponentActivity {
             }
         );
 
-        load();
-        build();
-        BellReceiver.rescheduleAll(this);
+        try {
+            load();
+            build();
+        } catch (Throwable e) {
+            showStartupError(e);
+            return;
+        }
 
+        // Jangan membuka halaman pengaturan sistem secara otomatis saat aplikasi
+        // baru dibuka. Ini dapat membuat WaliBell terlihat seperti tertutup pada
+        // beberapa perangkat/vendor. Alarm dijadwalkan setelah UI berhasil tampil.
+        try {
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                try { BellReceiver.rescheduleAll(this); } catch (Throwable ignored) {}
+            }, 300);
+        } catch (Throwable ignored) {}
+        
         // BellService tidak dijalankan saat aplikasi baru dibuka. Service hanya
         // dimulai oleh BellReceiver ketika waktu bel benar-benar tiba.
+    }
 
-        // Check exact-alarm access immediately after the UI is ready.
-        new Handler().postDelayed(this::requestExactAlarmPermission,700);
+    void showStartupError(Throwable e){
+        try {
+            String msg=e.getClass().getSimpleName();
+            if(e.getMessage()!=null&&!e.getMessage().isEmpty())msg+="\n"+e.getMessage();
+            TextView v=new TextView(this);
+            v.setText("WaliBell\n\nAplikasi gagal menampilkan halaman awal.\n\n"+msg);
+            v.setTextSize(16);
+            v.setTextColor(Color.DKGRAY);
+            v.setPadding(dp(24),dp(40),dp(24),dp(24));
+            setContentView(v);
+        } catch(Throwable ignored) {}
     }
 
     void load(){
