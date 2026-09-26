@@ -107,8 +107,13 @@ public class MainActivity extends ComponentActivity {
             }, 300);
         } catch (Throwable ignored) {}
         
-        // BellService tidak dijalankan saat aplikasi baru dibuka. Service hanya
-        // dimulai oleh BellReceiver ketika waktu bel benar-benar tiba.
+        // Jalankan foreground service saat aplikasi masih terbuka. Dengan begitu
+        // WaliBell sudah berada dalam mode aktif sebelum HP dikunci, sehingga pada
+        // perangkat/vendor yang ketat terhadap background-start, alarm tetap dapat
+        // meneruskan perintah audio ke service yang sudah hidup.
+        try {
+            new Handler(Looper.getMainLooper()).postDelayed(() -> startBellService(), 500);
+        } catch (Throwable ignored) {}
     }
 
     void showStartupError(Throwable e){
