@@ -14,23 +14,17 @@ public class BellReceiver extends BroadcastReceiver {
         String uri=i.getStringExtra("uri");
         String alarmKey=i.getStringExtra("alarmKey");
 
-        // Primary and backup exact alarms can target the same moment. Use one
-        // stable key so a late/double delivery never plays the same bell twice.
-        if(alarmKey!=null&&!alarmKey.isEmpty()&&!markAlarmDelivered(c,alarmKey)){
-            Log.i(TAG,"Duplikat alarm diabaikan: "+alarmKey);
-            rescheduleAll(c);
-            return;
-        }
-
-        logHistory(c,i.getStringExtra("name"),i.getStringExtra("time"));
-        saveStatus(c,"alarm_received",
-            "Alarm diterima " + nowText() + " • " +
+        // The exact alarm is delivered to this BroadcastReceiver first.
+        // This is the standard AlarmManager path: the receiver is awakened
+        // by the system, then starts the foreground service. Android explicitly
+        // allows an exact alarm to start a foreground service in the background.
+        saveStatus(c,"alarm_broadcast_received",
+            "Alarm broadcast diterima " + nowText() + " • " +
             (i.getStringExtra("name")==null?"Bel":i.getStringExtra("name")) +
             " " + (i.getStringExtra("time")==null?"":i.getStringExtra("time")));
 
-        // Starting the foreground service from an exact alarm is an Android
-        // background-FGS exemption. BellService acquires a PARTIAL_WAKE_LOCK
-        // while the sound is actually playing.
+        // BellService owns de-duplication and audio playback. Keeping the
+        // de-duplication in one place avoids rejecting the same alarm twice.
         try{
             Intent service=new Intent(c,BellService.class);
             service.putExtra("raw",raw);
@@ -44,8 +38,8 @@ public class BellReceiver extends BroadcastReceiver {
             Log.e(TAG,"Gagal memulai BellService dari exact alarm",e);
         }
 
-        // The alarm is one-shot; immediately schedule the next occurrence.
-        rescheduleAll(c);
+        // The alarm is one-shot. Schedule the next occurrence after the
+        // foreground service has accepted this alarm.
     }
 
     static boolean markAlarmDelivered(Context c,String key){
@@ -195,6 +189,18 @@ public class BellReceiver extends BroadcastReceiver {
                             am.cancel(backupPi);
                             backupPi.cancel();
                         }
+
+                        // Also cancel legacy backup broadcasts.
+                        Intent legacyBackupOld=new Intent(c,BellReceiver.class);
+                        legacyBackupOld.setAction("com.walinet.walibell.BELL_BACKUP_"+id+"_"+d);
+                        PendingIntent legacyBackupPi=PendingIntent.getBroadcast(
+                            c,id*10+d+200000,legacyBackupOld,
+                            PendingIntent.FLAG_NO_CREATE|PendingIntent.FLAG_IMMUTABLE
+                        );
+                        if(legacyBackupPi!=null){
+                            am.cancel(legacyBackupPi);
+                            legacyBackupPi.cancel();
+                        }
                     }
                 }catch(Exception e){
                     Log.w(TAG,"Gagal membatalkan alarm lama",e);
@@ -255,18 +261,15 @@ public class BellReceiver extends BroadcastReceiver {
                 String alarmKey=id+"_"+best.getTimeInMillis();
                 in.putExtra("alarmKey",alarmKey);
 
-                PendingIntent pi;
-                if(android.os.Build.VERSION.SDK_INT>=26){
-                    pi=PendingIntent.getForegroundService(
-                        c,requestCode,in,
-                        PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE
-                    );
-                }else{
-                    pi=PendingIntent.getBroadcast(
-                        c,requestCode,in,
-                        PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE
-                    );
-                }
+                // IMPORTANT: AlarmManager delivers the exact alarm to the
+                // BroadcastReceiver. The receiver then starts BellService as
+                // a foreground service. This is the documented Android alarm
+                // architecture and is more reliable across OEM/Android 15
+                // implementations than using a Service PendingIntent directly.
+                PendingIntent pi=PendingIntent.getBroadcast(
+                    c,requestCode,in,
+                    PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE
+                );
 
                 saveStatus(c,"next_alarm",
                     p[2]+" "+p[1]+" • "+new SimpleDateFormat("dd/MM/yyyy HH:mm:ss",Locale.getDefault()).format(best.getTime()));
@@ -312,18 +315,10 @@ public class BellReceiver extends BroadcastReceiver {
                 backupIn.putExtra("name",p[2]);
                 backupIn.putExtra("time",p[1]);
                 backupIn.putExtra("alarmKey",alarmKey);
-                PendingIntent backupPi;
-                if(android.os.Build.VERSION.SDK_INT>=26){
-                    backupPi=PendingIntent.getForegroundService(
-                        c,requestCode+200000,backupIn,
-                        PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE
-                    );
-                }else{
-                    backupPi=PendingIntent.getBroadcast(
-                        c,requestCode+200000,backupIn,
-                        PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE
-                    );
-                }
+                PendingIntent backupPi=PendingIntent.getBroadcast(
+                    c,requestCode+200000,backupIn,
+                    PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE
+                );
                 try{
                     am.setExactAndAllowWhileIdle(
                         AlarmManager.RTC_WAKEUP,best.getTimeInMillis(),backupPi
