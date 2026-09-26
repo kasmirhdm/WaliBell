@@ -899,24 +899,59 @@ public class MainActivity extends ComponentActivity {
         }
     }
 
+    Button toolInfoButton(String title,String description,Runnable action){
+        Button b=actionButton(title+"\n"+description);
+        b.setGravity(Gravity.CENTER_VERTICAL|Gravity.LEFT);
+        b.setPadding(dp(16),dp(6),dp(12),dp(6));
+        b.setTextSize(13);
+        b.setOnClickListener(v->action.run());
+        return b;
+    }
+
     void showAboutPage(){
         clearContent();content.addView(header("Tentang","Informasi aplikasi"),new LinearLayout.LayoutParams(-1,dp(78)));
         LinearLayout page=new LinearLayout(this);page.setOrientation(LinearLayout.VERTICAL);
+
         LinearLayout box=card();box.setGravity(Gravity.CENTER);
-        TextView n=tv("WaliBell",28);n.setTypeface(Typeface.create("sans-serif-medium",Typeface.BOLD));n.setGravity(Gravity.CENTER);n.setTextColor(themeColor());box.addView(n,new LinearLayout.LayoutParams(-1,dp(48)));
-        TextView v=tv("Versi 3.6\n\nSistem Bel Sekolah Otomatis\nProfesional, praktis, dan mudah dikelola\n\n"+schoolName()+"\n"+schoolLocation()+"\n\nPengelola Sistem\nKasmir, S.Pd\nOperator Sekolah",16);v.setGravity(Gravity.CENTER);box.addView(v,new LinearLayout.LayoutParams(-1,dp(210)));
+        TextView n=tv("WaliBell",28);n.setTypeface(Typeface.create("sans-serif-medium",Typeface.BOLD));n.setGravity(Gravity.CENTER);n.setTextColor(themeColor());
+        box.addView(n,new LinearLayout.LayoutParams(-1,dp(48)));
+        TextView v=tv("Versi 4.1\n\nSistem Bel Sekolah Otomatis\nProfesional, praktis, dan mudah dikelola\n\n"+schoolName()+"\n"+schoolLocation()+"\n\nPengelola Sistem\nKasmir, S.Pd\nOperator Sekolah",16);
+        v.setGravity(Gravity.CENTER);box.addView(v,new LinearLayout.LayoutParams(-1,dp(210)));
         LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-1,dp(300));bp.setMargins(dp(8),dp(8),dp(8),0);page.addView(box,bp);
-        TextView quote=tv("“Disiplin dimulai dari waktu”",18);quote.setTextColor(themeColor());quote.setGravity(Gravity.CENTER);page.addView(quote,new LinearLayout.LayoutParams(-1,dp(58)));
-        LinearLayout tools=card();Button identityBtn=actionButton("Identitas Sekolah");identityBtn.setOnClickListener(v2->showSchoolIdentityDialog());tools.addView(identityBtn,new LinearLayout.LayoutParams(-1,dp(44)));
-        TextView th=tv("Tampilan & Alat",17);th.setTypeface(Typeface.create("sans-serif-medium",Typeface.BOLD));tools.addView(th,new LinearLayout.LayoutParams(-1,dp(32)));
-        Button themeBtn=actionButton("Mode Gelap / Terang");themeBtn.setOnClickListener(v2->toggleDarkMode());tools.addView(themeBtn,new LinearLayout.LayoutParams(-1,dp(44)));
-        Button colorBtn=actionButton("Warna Tema");colorBtn.setOnClickListener(v2->chooseTheme());tools.addView(colorBtn,new LinearLayout.LayoutParams(-1,dp(44)));
-        Button kioskBtn=actionButton("Mode Layar Penuh / Kiosk");kioskBtn.setOnClickListener(v2->showKioskPage());tools.addView(kioskBtn,new LinearLayout.LayoutParams(-1,dp(44)));
-        Button backupBtn=actionButton("Backup Data Jadwal & Suara");backupBtn.setOnClickListener(v2->backupData());tools.addView(backupBtn,new LinearLayout.LayoutParams(-1,dp(44)));
-        Button restoreBtn=actionButton("Restore Data");restoreBtn.setOnClickListener(v2->restoreData());tools.addView(restoreBtn,new LinearLayout.LayoutParams(-1,dp(44)));
-        Button alarmBtn=actionButton("Cek Alarm & Pengingat");alarmBtn.setOnClickListener(v2->showExactAlarmStatus());tools.addView(alarmBtn,new LinearLayout.LayoutParams(-1,dp(44)));
-        LinearLayout.LayoutParams tp=new LinearLayout.LayoutParams(-1,dp(350));tp.setMargins(dp(8),dp(8),dp(8),dp(8));page.addView(tools,tp);
-        TextView tip=tv("Backup menyimpan jadwal, hari, dan file suara ke satu paket ZIP.",13);tip.setPadding(dp(12),dp(4),dp(12),dp(12));page.addView(tip,new LinearLayout.LayoutParams(-1,dp(42)));
+
+        TextView quote=tv("“Disiplin dimulai dari waktu”",18);quote.setTextColor(themeColor());quote.setGravity(Gravity.CENTER);
+        page.addView(quote,new LinearLayout.LayoutParams(-1,dp(58)));
+
+        LinearLayout tools=card();
+        TextView th=tv("Tampilan & Alat",17);th.setTypeface(Typeface.create("sans-serif-medium",Typeface.BOLD));
+        tools.addView(th,new LinearLayout.LayoutParams(-1,dp(32)));
+
+        Button identityBtn=toolInfoButton("Identitas Sekolah","Atur nama, lokasi, dan foto sekolah.",()->showSchoolIdentityDialog());
+        tools.addView(identityBtn,new LinearLayout.LayoutParams(-1,dp(64)));
+
+        Button themeBtn=toolInfoButton("Mode Gelap / Terang","Ubah tampilan sesuai kenyamanan pengguna.",()->toggleDarkMode());
+        tools.addView(themeBtn,new LinearLayout.LayoutParams(-1,dp(64)));
+
+        Button colorBtn=toolInfoButton("Warna Tema","Pilih warna utama tampilan WaliBell.",()->chooseTheme());
+        tools.addView(colorBtn,new LinearLayout.LayoutParams(-1,dp(64)));
+
+        Button kioskBtn=toolInfoButton("Mode Layar Penuh / Kiosk","Gunakan HP sebagai perangkat bel khusus.",()->showKioskPage());
+        tools.addView(kioskBtn,new LinearLayout.LayoutParams(-1,dp(64)));
+
+        Button backupBtn=toolInfoButton("Backup Data Jadwal & Suara","Simpan jadwal, hari, dan suara ke satu file ZIP.",()->backupData());
+        tools.addView(backupBtn,new LinearLayout.LayoutParams(-1,dp(64)));
+
+        Button restoreBtn=toolInfoButton("Restore Data","Kembalikan jadwal dan suara dari file backup.",()->restoreData());
+        tools.addView(restoreBtn,new LinearLayout.LayoutParams(-1,dp(64)));
+
+        Button alarmBtn=toolInfoButton("Cek Alarm & Pengingat","Pastikan izin alarm agar bel otomatis bekerja tepat waktu.",()->showExactAlarmStatus());
+        tools.addView(alarmBtn,new LinearLayout.LayoutParams(-1,dp(64)));
+
+        LinearLayout.LayoutParams tp=new LinearLayout.LayoutParams(-1,dp(480));tp.setMargins(dp(8),dp(8),dp(8),dp(8));page.addView(tools,tp);
+
+        TextView tip=tv("Setiap menu di atas memiliki penjelasan singkat agar operator sekolah mudah memahami fungsi dan pengaturannya.",13);
+        tip.setPadding(dp(12),dp(8),dp(12),dp(12));page.addView(tip,new LinearLayout.LayoutParams(-1,dp(54)));
+
         ScrollView sv=new ScrollView(this);sv.setFillViewport(true);sv.addView(page);content.addView(sv,new LinearLayout.LayoutParams(-1,0,1));
     }
 
