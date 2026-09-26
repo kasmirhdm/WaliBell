@@ -1,4 +1,4 @@
-name: Build WaliBell APK
+name: Build WaliBell Play Release
 
 on:
   workflow_dispatch:
@@ -31,34 +31,34 @@ jobs:
         with:
           packages: platform-tools
 
-      - name: Install Android SDK 35
+      - name: Install Android SDK 36
         run: |
           yes | sdkmanager --licenses || true
-          sdkmanager "platforms;android-35" "build-tools;35.0.0"
+          sdkmanager "platforms;android-36" "build-tools;36.0.0"
 
       - name: Set up Gradle 8.13
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.13'
 
-      - name: Build Debug APK
+      - name: Build Play AAB
         run: |
-          gradle clean assembleDebug --no-daemon
+          gradle clean bundleRelease --no-daemon
 
-      - name: Verify APK
+      - name: Verify AAB
         run: |
-          test -f app/build/outputs/apk/debug/app-debug.apk
-          ls -lh app/build/outputs/apk/debug/app-debug.apk
-          file app/build/outputs/apk/debug/app-debug.apk
+          test -f app/build/outputs/bundle/release/app-release.aab
+          ls -lh app/build/outputs/bundle/release/app-release.aab
+          file app/build/outputs/bundle/release/app-release.aab
 
-      - name: Prepare APK
+      - name: Prepare AAB
         run: |
           mkdir -p release
-          cp app/build/outputs/apk/debug/app-debug.apk release/WaliBell_V3.4.apk
+          cp app/build/outputs/bundle/release/app-release.aab release/WaliBell_V4.0-Play.aab
 
-      - name: Upload APK
+      - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
-          name: WaliBell-V3.4-APK
-          path: release/WaliBell_V3.4.apk
+          name: WaliBell-V4.0-Play-AAB
+          path: release/WaliBell_V4.0-Play.aab
           if-no-files-found: error
