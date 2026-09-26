@@ -93,7 +93,9 @@ public class MainActivity extends ComponentActivity {
         load();
         build();
         BellReceiver.rescheduleAll(this);
-        startBellService();
+
+        // BellService tidak dijalankan saat aplikasi baru dibuka. Service hanya
+        // dimulai oleh BellReceiver ketika waktu bel benar-benar tiba.
 
         // Check exact-alarm access immediately after the UI is ready.
         new Handler().postDelayed(this::requestExactAlarmPermission,700);
@@ -404,7 +406,7 @@ public class MainActivity extends ComponentActivity {
 
     @Override protected void onResume(){
         super.onResume();
-        try{BellReceiver.rescheduleAll(this);startBellService();}catch(Exception ignored){}
+        try{BellReceiver.rescheduleAll(this);}catch(Exception ignored){}
 
         // Returning from Android Settings continues the permission sequence.
         if(protectionFlowStarted){
