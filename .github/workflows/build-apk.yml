@@ -60,5 +60,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: WaliBell-V3.4-APK
-          path: release/WaliBell_V3.3.apk
+          path: release/WaliBell_V3.4.apk
           if-no-files-found: error
