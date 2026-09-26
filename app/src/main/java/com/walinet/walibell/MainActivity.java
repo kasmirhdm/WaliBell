@@ -115,7 +115,8 @@ public class MainActivity extends ComponentActivity {
                 s.name="Masuk"; s.time="07:00"; s.audioName="Belum ada suara"; s.audioUri=null; s.rawId=0; s.daysMask=31;
             }
         }
-        for(Schedule s:schedules){ if(s.rawId==0 && (s.audioUri==null||s.audioUri.isEmpty())){ int builtIn=builtInRawForName(s.name); if(builtIn!=0){s.rawId=builtIn; s.audioName=s.name+".wav";} } }\n        Collections.sort(schedules,(a,b)->{
+        for(Schedule s:schedules){ if(s.rawId==0 && (s.audioUri==null||s.audioUri.isEmpty())){ int builtIn=builtInRawForName(s.name); if(builtIn!=0){s.rawId=builtIn; s.audioName=s.name+".wav";} } }
+        Collections.sort(schedules,(a,b)->{
             int ta=0,tb=0;
             try{ta=Integer.parseInt(a.time.replace(":",""));}catch(Exception ignored){}
             try{tb=Integer.parseInt(b.time.replace(":",""));}catch(Exception ignored){}
