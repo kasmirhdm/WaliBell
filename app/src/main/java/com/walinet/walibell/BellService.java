@@ -58,7 +58,23 @@ public class BellService extends Service {
         if(intent!=null&&(intent.hasExtra("raw")||intent.hasExtra("uri"))){
             int raw=intent.getIntExtra("raw",0);
             String uri=intent.getStringExtra("uri");
+            String alarmKey=intent.getStringExtra("alarmKey");
+
+            // Primary and backup alarms may both fire. Deduplicate here too,
+            // because API 26+ alarms now target this foreground service directly.
+            if(alarmKey!=null&&!alarmKey.isEmpty()&&!BellReceiver.markAlarmDelivered(this,alarmKey)){
+                saveStatus("last_command","Duplikat alarm diabaikan " + nowText());
+                return START_STICKY;
+            }
+
+            BellReceiver.logHistory(this,intent.getStringExtra("name"),intent.getStringExtra("time"));
+            saveStatus("alarm_received","Alarm diterima " + nowText());
             play(raw,uri);
+
+            // The alarm is one-shot; schedule the next occurrence immediately.
+            try{ BellReceiver.rescheduleAll(this); }catch(Exception e){
+                saveStatus("last_error","Gagal menjadwalkan alarm berikutnya: " + e.getMessage());
+            }
         }
         return START_STICKY;
     }
