@@ -23,6 +23,10 @@ public class BellReceiver extends BroadcastReceiver {
         }
 
         logHistory(c,i.getStringExtra("name"),i.getStringExtra("time"));
+        saveStatus(c,"alarm_received",
+            "Alarm diterima " + nowText() + " • " +
+            (i.getStringExtra("name")==null?"Bel":i.getStringExtra("name")) +
+            " " + (i.getStringExtra("time")==null?"":i.getStringExtra("time")));
 
         // Starting the foreground service from an exact alarm is an Android
         // background-FGS exemption. BellService acquires a PARTIAL_WAKE_LOCK
@@ -34,6 +38,8 @@ public class BellReceiver extends BroadcastReceiver {
             if(android.os.Build.VERSION.SDK_INT>=26)c.startForegroundService(service);
             else c.startService(service);
         }catch(Exception e){
+            saveStatus(c,"last_error",
+                "BellService gagal dimulai: " + e.getClass().getSimpleName() + " - " + e.getMessage());
             Log.e(TAG,"Gagal memulai BellService dari exact alarm",e);
         }
 
@@ -50,6 +56,16 @@ public class BellReceiver extends BroadcastReceiver {
         if(last>0 && now-last<10*60*1000L)return false;
         sp.edit().putLong(key,now).apply();
         return true;
+    }
+
+    static void saveStatus(Context c,String key,String value){
+        try{
+            c.getSharedPreferences("bell_status",0).edit().putString(key,value).apply();
+        }catch(Exception ignored){}
+    }
+
+    static String nowText(){
+        return new SimpleDateFormat("dd/MM/yyyy HH:mm:ss",Locale.getDefault()).format(new Date());
     }
 
     static void logHistory(Context c,String name,String time){
@@ -226,6 +242,9 @@ public class BellReceiver extends BroadcastReceiver {
                     c,requestCode,in,
                     PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE
                 );
+
+                saveStatus(c,"next_alarm",
+                    p[2]+" "+p[1]+" • "+new SimpleDateFormat("dd/MM/yyyy HH:mm:ss",Locale.getDefault()).format(best.getTime()));
 
                 if(android.os.Build.VERSION.SDK_INT>=31 && !am.canScheduleExactAlarms()){
                     Log.e(TAG,"Exact alarm permission BELUM diberikan; alarm tidak dijadwalkan: "+p[2]+" "+p[1]);
