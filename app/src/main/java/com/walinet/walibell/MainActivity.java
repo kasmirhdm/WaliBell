@@ -1049,7 +1049,18 @@ public class MainActivity extends ComponentActivity {
         }).setNegativeButton("Batal",null).show();
     }
 
-    int builtInRawForName(String name){\n        if(name==null)return 0;\n        String n=name.toLowerCase(Locale.US);\n        if(n.contains("masuk setelah")||n.contains("masuk setelah istirahat"))return R.raw.bel_masuk_istirahat;\n        if(n.equals("masuk")||n.startsWith("masuk "))return R.raw.bel_masuk;\n        if(n.contains("pelajaran"))return R.raw.bel_pelajaran;\n        if(n.contains("istirahat"))return R.raw.bel_istirahat;\n        if(n.contains("pulang"))return R.raw.bel_pulang;\n        return 0;\n    }\n\n    void chooseAudio(int id){
+    int builtInRawForName(String name){
+        if(name==null)return 0;
+        String n=name.toLowerCase(Locale.US);
+        if(n.contains("masuk setelah")||n.contains("masuk setelah istirahat"))return R.raw.bel_masuk_istirahat;
+        if(n.equals("masuk")||n.startsWith("masuk "))return R.raw.bel_masuk;
+        if(n.contains("pelajaran"))return R.raw.bel_pelajaran;
+        if(n.contains("istirahat"))return R.raw.bel_istirahat;
+        if(n.contains("pulang"))return R.raw.bel_pulang;
+        return 0;
+    }
+
+    void chooseAudio(int id){
         editingId=id;
         Schedule selected=null;for(Schedule x:schedules)if(x.id==id){selected=x;break;}if(selected==null)return;
         new AlertDialog.Builder(this).setTitle("Suara untuk "+selected.name)
