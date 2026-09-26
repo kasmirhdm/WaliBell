@@ -29,6 +29,8 @@ public class BellReceiver extends BroadcastReceiver {
             Intent service=new Intent(c,BellService.class);
             service.putExtra("raw",raw);
             service.putExtra("uri",uri);
+            service.putExtra("name",i.getStringExtra("name"));
+            service.putExtra("time",i.getStringExtra("time"));
             service.putExtra("alarmKey",alarmKey);
             if(android.os.Build.VERSION.SDK_INT>=26)c.startForegroundService(service);
             else c.startService(service);
