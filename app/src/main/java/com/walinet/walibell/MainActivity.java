@@ -489,8 +489,7 @@ public class MainActivity extends ComponentActivity {
 
     void addSchoolPhoto(LinearLayout page){
         try{
-            byte[] imageBytes=android.util.Base64.decode(SchoolPhoto.BASE64,android.util.Base64.DEFAULT);
-            android.graphics.Bitmap bitmap=android.graphics.BitmapFactory.decodeByteArray(imageBytes,0,imageBytes.length);
+            android.graphics.Bitmap bitmap=android.graphics.BitmapFactory.decodeResource(getResources(),R.drawable.school_photo);
             if(bitmap==null)return;
             ImageView photo=new ImageView(this);
             photo.setImageBitmap(bitmap);
