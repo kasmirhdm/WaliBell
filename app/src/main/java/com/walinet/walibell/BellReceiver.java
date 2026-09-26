@@ -159,7 +159,7 @@ public class BellReceiver extends BroadcastReceiver {
                     if(p.length<6)continue;
                     int id=Integer.parseInt(p[0]);
                     for(int d=0;d<7;d++){
-                        Intent old=new Intent(c,BellReceiver.class);
+                        Intent old=new Intent(c,BellService.class);
                         old.setAction("com.walinet.walibell.BELL_"+id+"_"+d);
                         PendingIntent pi;
                         if(android.os.Build.VERSION.SDK_INT>=26){
@@ -177,7 +177,7 @@ public class BellReceiver extends BroadcastReceiver {
                             am.cancel(pi);
                             pi.cancel();
                         }
-                        Intent backupOld=new Intent(c,BellReceiver.class);
+                        Intent backupOld=new Intent(c,BellService.class);
                         backupOld.setAction("com.walinet.walibell.BELL_BACKUP_"+id+"_"+d);
                         PendingIntent backupPi;
                         if(android.os.Build.VERSION.SDK_INT>=26){
@@ -246,7 +246,7 @@ public class BellReceiver extends BroadcastReceiver {
                 int dayIndex=(best.get(Calendar.DAY_OF_WEEK)+5)%7;
                 int requestCode=id*10+dayIndex;
 
-                Intent in=new Intent(c,BellReceiver.class);
+                Intent in=new Intent(c,BellService.class);
                 in.setAction("com.walinet.walibell.BELL_"+id+"_"+dayIndex);
                 in.putExtra("raw",raw);
                 in.putExtra("uri",uri);
@@ -305,7 +305,7 @@ public class BellReceiver extends BroadcastReceiver {
                 // BACKUP: use a separate PendingIntent so the fallback can
                 // coexist with the primary. BellReceiver de-duplicates both
                 // deliveries using alarmKey.
-                Intent backupIn=new Intent(c,BellReceiver.class);
+                Intent backupIn=new Intent(c,BellService.class);
                 backupIn.setAction("com.walinet.walibell.BELL_BACKUP_"+id+"_"+dayIndex);
                 backupIn.putExtra("raw",raw);
                 backupIn.putExtra("uri",uri);
