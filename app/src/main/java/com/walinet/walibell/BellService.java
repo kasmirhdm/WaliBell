@@ -71,10 +71,9 @@ public class BellService extends Service {
             saveStatus("alarm_received","Alarm diterima " + nowText());
             play(raw,uri);
 
-            // The alarm is one-shot; schedule the next occurrence immediately.
-            try{ BellReceiver.rescheduleAll(this); }catch(Exception e){
-                saveStatus("last_error","Gagal menjadwalkan alarm berikutnya: " + e.getMessage());
-            }
+            // The BroadcastReceiver schedules the next one-shot occurrence.
+            // Keeping scheduling in one component avoids two simultaneous
+            // reschedule passes when primary and backup alarms fire.
         }
         return START_STICKY;
     }
