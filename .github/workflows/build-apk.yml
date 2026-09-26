@@ -1,4 +1,4 @@
-name: Build WaliBell Release APK
+name: Build WaliBell APK
 
 on:
   workflow_dispatch:
@@ -41,43 +41,24 @@ jobs:
         with:
           gradle-version: '8.13'
 
-      - name: Decode release keystore
-        env:
-          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+      - name: Build Debug APK
         run: |
-          echo "$RELEASE_KEYSTORE_BASE64" | base64 --decode > app/release-keystore.jks
-          chmod 600 app/release-keystore.jks
-
-      - name: Verify release keystore
-        env:
-          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
-          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
-        run: |
-          keytool -list             -keystore app/release-keystore.jks             -storepass "$RELEASE_STORE_PASSWORD"             -alias "$RELEASE_KEY_ALIAS"
-
-      - name: Build Release APK
-        env:
-          RELEASE_KEYSTORE_FILE: release-keystore.jks
-          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
-          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
-          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
-        run: |
-          gradle clean assembleRelease --no-daemon
+          gradle clean assembleDebug --no-daemon
 
       - name: Verify APK
         run: |
-          test -f app/build/outputs/apk/release/app-release.apk
-          ls -lh app/build/outputs/apk/release/app-release.apk
-          file app/build/outputs/apk/release/app-release.apk
+          test -f app/build/outputs/apk/debug/app-debug.apk
+          ls -lh app/build/outputs/apk/debug/app-debug.apk
+          file app/build/outputs/apk/debug/app-debug.apk
 
-      - name: Prepare release APK
+      - name: Prepare APK
         run: |
           mkdir -p release
-          cp app/build/outputs/apk/release/app-release.apk release/WaliBell_V3.2.apk
+          cp app/build/outputs/apk/debug/app-debug.apk release/WaliBell_V3.2.apk
 
-      - name: Upload Release APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: WaliBell-V3.2-Release
+          name: WaliBell-V3.2-APK
           path: release/WaliBell_V3.2.apk
           if-no-files-found: error
