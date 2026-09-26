@@ -108,14 +108,14 @@ public class MainActivity extends ComponentActivity {
                 if(p.length>=6)schedules.add(new Schedule(Integer.parseInt(p[0]),p[1],p[2],p[3],p[4].isEmpty()?null:p[4],Integer.parseInt(p[5]),p.length>=7?Integer.parseInt(p[6]):31));
             }catch(Exception ignored){}
         }
-        if(schedules.isEmpty())for(int i=0;i<names.length;i++)schedules.add(new Schedule(i,times[i],names[i],"Belum ada suara",null,0));
+        if(schedules.isEmpty())for(int i=0;i<names.length;i++){ int raw=builtInRawForName(names[i]); schedules.add(new Schedule(i,times[i],names[i],names[i]+".wav",null,raw)); }
         // Bersihkan data uji coba yang terlihat pada V3.13 dan pulihkan jadwal Masuk bawaan.
         for(Schedule s:schedules){
             if("Pelajaran Pertama".equals(s.name)&&"20:13".equals(s.time)){
                 s.name="Masuk"; s.time="07:00"; s.audioName="Belum ada suara"; s.audioUri=null; s.rawId=0; s.daysMask=31;
             }
         }
-        Collections.sort(schedules,(a,b)->{
+        for(Schedule s:schedules){ if(s.rawId==0 && (s.audioUri==null||s.audioUri.isEmpty())){ int builtIn=builtInRawForName(s.name); if(builtIn!=0){s.rawId=builtIn; s.audioName=s.name+".wav";} } }\n        Collections.sort(schedules,(a,b)->{
             int ta=0,tb=0;
             try{ta=Integer.parseInt(a.time.replace(":",""));}catch(Exception ignored){}
             try{tb=Integer.parseInt(b.time.replace(":",""));}catch(Exception ignored){}
@@ -839,7 +839,7 @@ public class MainActivity extends ComponentActivity {
         LinearLayout page=new LinearLayout(this);page.setOrientation(LinearLayout.VERTICAL);
         LinearLayout box=card();box.setGravity(Gravity.CENTER);
         TextView n=tv("WaliBell",28);n.setTypeface(Typeface.create("sans-serif-medium",Typeface.BOLD));n.setGravity(Gravity.CENTER);n.setTextColor(themeColor());box.addView(n,new LinearLayout.LayoutParams(-1,dp(48)));
-        TextView v=tv("Versi 4.6\n\nAplikasi bel sekolah otomatis\nMudah, Praktis, dan Andal\n\nKasmir, S.Pd\nKepala Sekolah\nSMPN 1 Sungai Batang\nIndragiri Hilir - Riau",16);v.setGravity(Gravity.CENTER);box.addView(v,new LinearLayout.LayoutParams(-1,dp(210)));
+        TextView v=tv("Versi 3.1\n\nAplikasi bel sekolah otomatis\nMudah, Praktis, dan Andal\n\nKasmir, S.Pd\nKepala Sekolah\nSMPN 1 Sungai Batang\nIndragiri Hilir - Riau",16);v.setGravity(Gravity.CENTER);box.addView(v,new LinearLayout.LayoutParams(-1,dp(210)));
         LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-1,dp(300));bp.setMargins(dp(8),dp(8),dp(8),0);page.addView(box,bp);
         TextView quote=tv("“Disiplin dimulai dari waktu”",18);quote.setTextColor(themeColor());quote.setGravity(Gravity.CENTER);page.addView(quote,new LinearLayout.LayoutParams(-1,dp(58)));
         LinearLayout tools=card();TextView th=tv("Tampilan & Alat",17);th.setTypeface(Typeface.create("sans-serif-medium",Typeface.BOLD));tools.addView(th,new LinearLayout.LayoutParams(-1,dp(32)));
@@ -1049,7 +1049,7 @@ public class MainActivity extends ComponentActivity {
         }).setNegativeButton("Batal",null).show();
     }
 
-    void chooseAudio(int id){
+    int builtInRawForName(String name){\n        if(name==null)return 0;\n        String n=name.toLowerCase(Locale.US);\n        if(n.contains("masuk setelah")||n.contains("masuk setelah istirahat"))return R.raw.bel_masuk_istirahat;\n        if(n.equals("masuk")||n.startsWith("masuk "))return R.raw.bel_masuk;\n        if(n.contains("pelajaran"))return R.raw.bel_pelajaran;\n        if(n.contains("istirahat"))return R.raw.bel_istirahat;\n        if(n.contains("pulang"))return R.raw.bel_pulang;\n        return 0;\n    }\n\n    void chooseAudio(int id){
         editingId=id;
         Schedule selected=null;for(Schedule x:schedules)if(x.id==id){selected=x;break;}if(selected==null)return;
         new AlertDialog.Builder(this).setTitle("Suara untuk "+selected.name)
@@ -1079,7 +1079,7 @@ public class MainActivity extends ComponentActivity {
     }
     void preview(Schedule s){
         try{
-            if(s.rawId==0&&(s.audioUri==null||s.audioUri.isEmpty())){Toast.makeText(this,"Belum ada suara. Silakan pilih atau rekam suara.",Toast.LENGTH_SHORT).show();return;}
+            if(s.rawId==0&&(s.audioUri==null||s.audioUri.isEmpty())){int builtIn=builtInRawForName(s.name);if(builtIn!=0){s.rawId=builtIn;s.audioName=s.name+".wav";save();BellReceiver.rescheduleAll(this);}else{Toast.makeText(this,"Belum ada suara. Silakan pilih atau rekam suara.",Toast.LENGTH_SHORT).show();return;}}
             MediaPlayer p=s.rawId!=0?MediaPlayer.create(this,s.rawId):MediaPlayer.create(this,Uri.parse(s.audioUri));
             if(p==null){Toast.makeText(this,"Audio tidak dapat diputar",Toast.LENGTH_SHORT).show();return;}p.setOnCompletionListener(MediaPlayer::release);p.start();
         }catch(Exception e){Toast.makeText(this,"Audio tidak dapat diputar",Toast.LENGTH_SHORT).show();}
