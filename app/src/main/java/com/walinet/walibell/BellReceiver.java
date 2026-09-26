@@ -38,8 +38,14 @@ public class BellReceiver extends BroadcastReceiver {
             Log.e(TAG,"Gagal memulai BellService dari exact alarm",e);
         }
 
-        // The alarm is one-shot. Schedule the next occurrence after the
-        // foreground service has accepted this alarm.
+        // Keep the recurring school-bell schedule alive by calculating
+        // the next one-shot alarm after this delivery.
+        try{
+            rescheduleAll(c);
+        }catch(Exception e){
+            saveStatus(c,"last_error",
+                "Gagal menjadwalkan alarm berikutnya: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+        }
     }
 
     static boolean markAlarmDelivered(Context c,String key){
