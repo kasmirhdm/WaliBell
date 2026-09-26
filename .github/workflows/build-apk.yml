@@ -73,19 +73,19 @@ jobs:
       - name: Prepare release files
         run: |
           mkdir -p release
-          cp app/build/outputs/bundle/release/app-release.aab release/WaliBell_V4.0-Play.aab
-          cp app/build/outputs/apk/release/app-release.apk release/WaliBell_V4.0-Free.apk
+          cp app/build/outputs/bundle/release/app-release.aab release/WaliBell_V4.1-Play.aab
+          cp app/build/outputs/apk/release/app-release.apk release/WaliBell_V4.1-Free.apk
 
       - name: Upload Play AAB
         uses: actions/upload-artifact@v4
         with:
-          name: WaliBell-V4.0-Play-AAB
-          path: release/WaliBell_V4.0-Play.aab
+          name: WaliBell-V4.1-Play-AAB
+          path: release/WaliBell_V4.1-Play.aab
           if-no-files-found: error
 
       - name: Upload Free APK
         uses: actions/upload-artifact@v4
         with:
-          name: WaliBell-V4.0-Free-APK
-          path: release/WaliBell_V4.0-Free.apk
+          name: WaliBell-V4.1-Free-APK
+          path: release/WaliBell_V4.1-Free.apk
           if-no-files-found: error
