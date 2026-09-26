@@ -18,8 +18,19 @@ android {
         versionName '4.0'
     }
 
+    signingConfigs {
+        release {
+            def keystorePath = System.getenv("RELEASE_KEYSTORE_FILE") ?: "walibell-upload-key.jks"
+            storeFile file(keystorePath)
+            storePassword System.getenv("RELEASE_STORE_PASSWORD")
+            keyAlias System.getenv("RELEASE_KEY_ALIAS")
+            keyPassword System.getenv("RELEASE_KEY_PASSWORD")
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig signingConfigs.release
             minifyEnabled false
             shrinkResources false
         }
