@@ -20,6 +20,7 @@ public class BellService extends Service {
     @Override public void onCreate(){
         super.onCreate();
         createChannel();
+        saveStatus("service_started", "Foreground service aktif " + nowText());
 
         Intent open=new Intent(this,MainActivity.class);
         PendingIntent pi=PendingIntent.getActivity(
@@ -53,6 +54,7 @@ public class BellService extends Service {
     }
 
     @Override public int onStartCommand(Intent intent,int flags,int startId){
+        saveStatus("last_command", "Perintah service diterima " + nowText());
         if(intent!=null&&(intent.hasExtra("raw")||intent.hasExtra("uri"))){
             int raw=intent.getIntExtra("raw",0);
             String uri=intent.getStringExtra("uri");
@@ -74,6 +76,7 @@ public class BellService extends Service {
             }
             if(!wakeLock.isHeld())wakeLock.acquire(90_000L);
         }catch(Exception e){
+            saveStatus("last_error", "WakeLock gagal: " + e.getClass().getSimpleName() + " - " + e.getMessage());
             Log.e(TAG,"Gagal memperoleh WakeLock",e);
         }
     }
@@ -125,14 +128,28 @@ public class BellService extends Service {
                     return true;
                 });
                 player.start();
+                saveStatus("audio_started", "Audio mulai diputar " + nowText());
             }else{
+                saveStatus("last_error", "Audio tidak ditemukan " + nowText());
                 Log.w(TAG,"Tidak ada audio untuk dimainkan");
                 releaseWakeLock();
             }
         }catch(Exception e){
             releaseWakeLock();
+            saveStatus("last_error", "Gagal memutar bel: " + e.getClass().getSimpleName() + " - " + e.getMessage());
             Log.e(TAG,"Gagal memutar bel",e);
         }
+    }
+
+    void saveStatus(String key,String value){
+        try{
+            getSharedPreferences("bell_status",0).edit().putString(key,value).apply();
+        }catch(Exception ignored){}
+    }
+
+    String nowText(){
+        return new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss",java.util.Locale.getDefault())
+            .format(new java.util.Date());
     }
 
     void createChannel(){
