@@ -32,7 +32,7 @@ import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 public class MainActivity extends ComponentActivity {
-    static final int PICK_AUDIO=701, RECORD_AUDIO=702, BACKUP_CREATE=703, RESTORE_OPEN=704;
+    static final int PICK_AUDIO=701, RECORD_AUDIO=702, BACKUP_CREATE=703, RESTORE_OPEN=704, PICK_SCHOOL_PHOTO=705;
     static final int PAGE_HOME=0, PAGE_SCHEDULE=1, PAGE_SOUND=2, PAGE_HISTORY=3, PAGE_DEVICE=4, PAGE_ABOUT=5;
     static final int GREEN=Color.rgb(15,118,110), DARK=Color.rgb(6,78,68);
     static final int LIGHT=Color.rgb(236,253,245), CARD=Color.rgb(248,250,249);
@@ -51,6 +51,7 @@ public class MainActivity extends ComponentActivity {
     // Permission flow: notification -> exact alarm -> battery optimization.
     ActivityResultLauncher<String> notificationPermissionLauncher;
     ActivityResultLauncher<Intent> exactAlarmSettingsLauncher;
+    ActivityResultLauncher<Intent> schoolPhotoPickerLauncher;
     boolean protectionFlowStarted=false;
     boolean protectionIntroShown=false;
     boolean waitingForExactAlarmSettings=false;
@@ -61,6 +62,8 @@ public class MainActivity extends ComponentActivity {
 
     @Override public void onCreate(Bundle b){
         super.onCreate(b);
+
+        schoolPhotoPickerLauncher=registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> { if(result.getResultCode()==RESULT_OK && result.getData()!=null && result.getData().getData()!=null) saveSchoolPhoto(result.getData().getData()); });
 
         notificationPermissionLauncher=registerForActivityResult(
             new ActivityResultContracts.RequestPermission(),
@@ -487,24 +490,33 @@ public class MainActivity extends ComponentActivity {
         else showAboutPage();
     }
 
-    void addSchoolPhoto(LinearLayout page){
-        try{
-            android.graphics.Bitmap bitmap=android.graphics.BitmapFactory.decodeResource(getResources(),R.drawable.school_photo);
-            if(bitmap==null)return;
-            ImageView photo=new ImageView(this);
-            photo.setImageBitmap(bitmap);
-            photo.setScaleType(ImageView.ScaleType.CENTER_CROP);
-            photo.setClipToOutline(true);
-            GradientDrawable bg=new GradientDrawable();
-            bg.setColor(Color.rgb(226,232,240));
-            bg.setCornerRadius(dp(20));
-            photo.setBackground(bg);
-            photo.setElevation(dp(4));
-            LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,dp(150));
-            lp.setMargins(0,dp(10),0,dp(4));
-            page.addView(photo,lp);
-        }catch(Exception ignored){}
+    String schoolName(){ return getSharedPreferences("school_identity",0).getString("school_name","SMPN 1 Sungai Batang"); }
+    String schoolLocation(){ return getSharedPreferences("school_identity",0).getString("school_location","Indragiri Hilir - Riau"); }
+    android.graphics.Bitmap schoolPhotoBitmap(){
+        try{ String path=getSharedPreferences("school_identity",0).getString("school_photo_path","");
+            if(!path.isEmpty()){ android.graphics.Bitmap b=android.graphics.BitmapFactory.decodeFile(path); if(b!=null)return b; }
+            return android.graphics.BitmapFactory.decodeResource(getResources(),R.drawable.school_photo);
+        }catch(Exception e){return null;}
     }
+    void saveSchoolPhoto(Uri uri){
+        try{ File out=new File(getFilesDir(),"school_photo.jpg");
+            try(InputStream in=getContentResolver().openInputStream(uri); OutputStream os=new FileOutputStream(out)){byte[] buf=new byte[8192];int n;while((n=in.read(buf))>0)os.write(buf,0,n);}
+            getSharedPreferences("school_identity",0).edit().putString("school_photo_path",out.getAbsolutePath()).apply();
+            Toast.makeText(this,"Foto sekolah berhasil disimpan",Toast.LENGTH_SHORT).show(); showHome();
+        }catch(Exception e){Toast.makeText(this,"Gagal menyimpan foto sekolah",Toast.LENGTH_SHORT).show();}
+    }
+    void chooseSchoolPhoto(){Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.addCategory(Intent.CATEGORY_OPENABLE);i.setType("image/*");schoolPhotoPickerLauncher.launch(i);}
+    void showSchoolIdentityDialog(){
+        LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(dp(8),0,dp(8),0);
+        EditText name=new EditText(this);name.setHint("Nama sekolah");name.setText(schoolName());box.addView(name,new LinearLayout.LayoutParams(-1,dp(60)));
+        EditText loc=new EditText(this);loc.setHint("Kabupaten/Kota - Provinsi");loc.setText(schoolLocation());box.addView(loc,new LinearLayout.LayoutParams(-1,dp(60)));
+        Button photo=actionButton("Pilih / Ganti Foto Sekolah");photo.setOnClickListener(v->chooseSchoolPhoto());box.addView(photo,new LinearLayout.LayoutParams(-1,dp(48)));
+        new AlertDialog.Builder(this).setTitle("Identitas Sekolah").setMessage("Nama, lokasi, dan foto dapat diubah kapan saja.").setView(box).setNegativeButton("Batal",null).setPositiveButton("Simpan",(d,w)->{
+            String n=name.getText().toString().trim(),l=loc.getText().toString().trim();if(n.isEmpty())n="Nama Sekolah";if(l.isEmpty())l="Kabupaten/Kota - Provinsi";
+            getSharedPreferences("school_identity",0).edit().putString("school_name",n).putString("school_location",l).putBoolean("school_setup_done",true).apply();showHome();
+        }).show();
+    }
+    void showFirstSchoolSetup(){new AlertDialog.Builder(this).setTitle("Selamat Datang di WaliBell").setMessage("Silakan isi identitas sekolah. Foto sekolah dapat diganti kapan saja melalui menu Tentang.").setPositiveButton("Atur Sekarang",(d,w)->showSchoolIdentityDialog()).setCancelable(false).show();}
 
     void showHome(){
         clearContent();
@@ -516,43 +528,20 @@ public class MainActivity extends ComponentActivity {
         page.setOrientation(LinearLayout.VERTICAL);
         page.setPadding(dp(10),dp(8),dp(10),dp(18));
 
-        // ===== HEADER =====
-        LinearLayout hero=new LinearLayout(this);
-        hero.setOrientation(LinearLayout.HORIZONTAL);
-        hero.setGravity(Gravity.CENTER_VERTICAL);
-        hero.setPadding(dp(22),dp(14),dp(18),dp(14));
-
-        GradientDrawable heroBg=new GradientDrawable(
-            GradientDrawable.Orientation.TL_BR,
-            new int[]{Color.rgb(8,47,73),Color.rgb(15,75,110),Color.rgb(30,64,110)}
-        );
-        heroBg.setCornerRadius(dp(24));
-        hero.setBackground(heroBg);
-        hero.setElevation(dp(5));
-
-        ImageView bellIcon=new ImageView(this);
-        bellIcon.setImageResource(R.drawable.ic_bell);
-        bellIcon.setColorFilter(Color.rgb(250,204,21),android.graphics.PorterDuff.Mode.SRC_IN);
-        bellIcon.setContentDescription("Lonceng WaliBell");
-        hero.addView(bellIcon,new LinearLayout.LayoutParams(dp(58),dp(58)));
-
-        LinearLayout heroText=new LinearLayout(this);
-        heroText.setOrientation(LinearLayout.VERTICAL);
-        heroText.setPadding(dp(14),0,0,0);
-        TextView h1=new TextView(this);
-        h1.setText("WaliBell");h1.setTextColor(Color.WHITE);h1.setTextSize(30);
-        h1.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-        TextView h2=new TextView(this);
-        h2.setText("Bel Sekolah Otomatis");h2.setTextColor(Color.WHITE);h2.setTextSize(15);
-        TextView school=new TextView(this);
-        school.setText("SMPN 1 SUNGAI BATANG");school.setTextColor(Color.rgb(250,204,21));school.setTextSize(12);
-        school.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-        heroText.addView(h1,new LinearLayout.LayoutParams(-1,dp(40)));
-        heroText.addView(h2,new LinearLayout.LayoutParams(-1,dp(27)));
-        heroText.addView(school,new LinearLayout.LayoutParams(-1,dp(24)));
-        hero.addView(heroText,new LinearLayout.LayoutParams(0,-2,1));
-        page.addView(hero,new LinearLayout.LayoutParams(-1,(int)(getResources().getDisplayMetrics().heightPixels*0.23f)));
-        addSchoolPhoto(page);
+        // ===== SCHOOL PHOTO HERO =====
+        FrameLayout hero=new FrameLayout(this);hero.setClipToOutline(true);
+        GradientDrawable heroShape=new GradientDrawable();heroShape.setCornerRadius(dp(24));heroShape.setColor(Color.rgb(8,47,73));hero.setBackground(heroShape);hero.setElevation(dp(5));
+        ImageView heroPhoto=new ImageView(this);heroPhoto.setImageBitmap(schoolPhotoBitmap());heroPhoto.setScaleType(ImageView.ScaleType.CENTER_CROP);hero.addView(heroPhoto,new FrameLayout.LayoutParams(-1,-1));
+        View darkOverlay=new View(this);darkOverlay.setBackgroundColor(Color.argb(125,0,25,45));hero.addView(darkOverlay,new FrameLayout.LayoutParams(-1,-1));
+        LinearLayout heroContent=new LinearLayout(this);heroContent.setOrientation(LinearLayout.HORIZONTAL);heroContent.setGravity(Gravity.CENTER_VERTICAL);heroContent.setPadding(dp(22),dp(12),dp(18),dp(12));
+        ImageView bellIcon=new ImageView(this);bellIcon.setImageResource(R.drawable.ic_bell);bellIcon.setColorFilter(Color.rgb(250,204,21),android.graphics.PorterDuff.Mode.SRC_IN);heroContent.addView(bellIcon,new LinearLayout.LayoutParams(dp(58),dp(58)));
+        LinearLayout heroText=new LinearLayout(this);heroText.setOrientation(LinearLayout.VERTICAL);heroText.setPadding(dp(14),0,0,0);
+        TextView h1=new TextView(this);h1.setText("WaliBell");h1.setTextColor(Color.WHITE);h1.setTextSize(30);h1.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+        TextView h2=new TextView(this);h2.setText("Bel Sekolah Otomatis");h2.setTextColor(Color.WHITE);h2.setTextSize(15);
+        TextView school=new TextView(this);school.setText(schoolName().toUpperCase(Locale.ROOT));school.setTextColor(Color.rgb(250,204,21));school.setTextSize(12);school.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+        heroText.addView(h1,new LinearLayout.LayoutParams(-1,dp(40)));heroText.addView(h2,new LinearLayout.LayoutParams(-1,dp(27)));heroText.addView(school,new LinearLayout.LayoutParams(-1,dp(24)));
+        heroContent.addView(heroText,new LinearLayout.LayoutParams(0,-2,1));hero.addView(heroContent,new FrameLayout.LayoutParams(-1,-1,Gravity.CENTER));
+        page.addView(hero,new LinearLayout.LayoutParams(-1,dp(270)));
 
         // ===== CLOCK & STATUS CARD =====
         LinearLayout statusCard=card();
@@ -915,10 +904,10 @@ public class MainActivity extends ComponentActivity {
         LinearLayout page=new LinearLayout(this);page.setOrientation(LinearLayout.VERTICAL);
         LinearLayout box=card();box.setGravity(Gravity.CENTER);
         TextView n=tv("WaliBell",28);n.setTypeface(Typeface.create("sans-serif-medium",Typeface.BOLD));n.setGravity(Gravity.CENTER);n.setTextColor(themeColor());box.addView(n,new LinearLayout.LayoutParams(-1,dp(48)));
-        TextView v=tv("Versi 3.4\n\nSistem Bel Sekolah Otomatis\nProfesional, praktis, dan mudah dikelola\n\nSMPN 1 Sungai Batang\nIndragiri Hilir - Riau\n\nPengelola Sistem\nKasmir, S.Pd\nOperator Sekolah",16);v.setGravity(Gravity.CENTER);box.addView(v,new LinearLayout.LayoutParams(-1,dp(210)));
+        TextView v=tv("Versi 3.4\n\nSistem Bel Sekolah Otomatis\nProfesional, praktis, dan mudah dikelola\n\n"+schoolName()+"\n"+schoolLocation()+"\n\nPengelola Sistem\nKasmir, S.Pd\nOperator Sekolah",16);v.setGravity(Gravity.CENTER);box.addView(v,new LinearLayout.LayoutParams(-1,dp(210)));
         LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-1,dp(300));bp.setMargins(dp(8),dp(8),dp(8),0);page.addView(box,bp);
         TextView quote=tv("“Disiplin dimulai dari waktu”",18);quote.setTextColor(themeColor());quote.setGravity(Gravity.CENTER);page.addView(quote,new LinearLayout.LayoutParams(-1,dp(58)));
-        LinearLayout tools=card();TextView th=tv("Tampilan & Alat",17);th.setTypeface(Typeface.create("sans-serif-medium",Typeface.BOLD));tools.addView(th,new LinearLayout.LayoutParams(-1,dp(32)));
+        LinearLayout tools=card();Button identityBtn=actionButton("Identitas Sekolah");identityBtn.setOnClickListener(v2->showSchoolIdentityDialog());tools.addView(identityBtn,new LinearLayout.LayoutParams(-1,dp(44)));\n        TextView th=tv("Tampilan & Alat",17);th.setTypeface(Typeface.create("sans-serif-medium",Typeface.BOLD));tools.addView(th,new LinearLayout.LayoutParams(-1,dp(32)));
         Button themeBtn=actionButton("Mode Gelap / Terang");themeBtn.setOnClickListener(v2->toggleDarkMode());tools.addView(themeBtn,new LinearLayout.LayoutParams(-1,dp(44)));
         Button colorBtn=actionButton("Warna Tema");colorBtn.setOnClickListener(v2->chooseTheme());tools.addView(colorBtn,new LinearLayout.LayoutParams(-1,dp(44)));
         Button kioskBtn=actionButton("Mode Layar Penuh / Kiosk");kioskBtn.setOnClickListener(v2->showKioskPage());tools.addView(kioskBtn,new LinearLayout.LayoutParams(-1,dp(44)));
