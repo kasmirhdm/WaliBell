@@ -487,6 +487,26 @@ public class MainActivity extends ComponentActivity {
         else showAboutPage();
     }
 
+    void addSchoolPhoto(LinearLayout page){
+        try{
+            byte[] imageBytes=android.util.Base64.decode(SchoolPhoto.BASE64,android.util.Base64.DEFAULT);
+            android.graphics.Bitmap bitmap=android.graphics.BitmapFactory.decodeByteArray(imageBytes,0,imageBytes.length);
+            if(bitmap==null)return;
+            ImageView photo=new ImageView(this);
+            photo.setImageBitmap(bitmap);
+            photo.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            photo.setClipToOutline(true);
+            GradientDrawable bg=new GradientDrawable();
+            bg.setColor(Color.rgb(226,232,240));
+            bg.setCornerRadius(dp(20));
+            photo.setBackground(bg);
+            photo.setElevation(dp(4));
+            LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,dp(150));
+            lp.setMargins(0,dp(10),0,dp(4));
+            page.addView(photo,lp);
+        }catch(Exception ignored){}
+    }
+
     void showHome(){
         clearContent();
 
