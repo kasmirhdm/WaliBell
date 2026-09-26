@@ -647,8 +647,8 @@ public class MainActivity extends ComponentActivity {
 
         Runnable refresh=()->{
             Calendar now=Calendar.getInstance();
-            date.setText(new SimpleDateFormat("EEEE, dd MMMM yyyy",new Locale("id","ID")).format(now));
-            clock.setText(new SimpleDateFormat("HH:mm:ss",Locale.getDefault()).format(now));
+            date.setText(new SimpleDateFormat("EEEE, dd MMMM yyyy",new Locale("id","ID")).format(now.getTime()));
+            clock.setText(new SimpleDateFormat("HH:mm:ss",Locale.getDefault()).format(now.getTime()));
 
             Schedule next=getNextSchedule();
             nextText.setText(next==null?"Berikutnya: Tidak ada jadwal":("Berikutnya: "+next.name+"  •  "+next.time));
