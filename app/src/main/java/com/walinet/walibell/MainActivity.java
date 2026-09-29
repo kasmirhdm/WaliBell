@@ -654,6 +654,9 @@ public class MainActivity extends ComponentActivity {
         LinearLayout scheduleGrid=new LinearLayout(this);scheduleGrid.setOrientation(LinearLayout.VERTICAL);
         page.addView(scheduleGrid,new LinearLayout.LayoutParams(-1,0,1));
 
+        // Tampilkan halaman compact memenuhi area konten di atas bottom navigation.
+        content.addView(page,new LinearLayout.LayoutParams(-1,0,1));
+
         // Pastikan isi hari ini dapat dirender tanpa ScrollView.
         Runnable refresh=()->{
             Calendar now=Calendar.getInstance();
