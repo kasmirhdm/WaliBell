@@ -101,3 +101,4 @@ jobs:
           name: WaliBell-V4.5-Free-APK
           path: release/WaliBell_V4.5-Free.apk
           if-no-files-found: error
+          compression-level: 0
