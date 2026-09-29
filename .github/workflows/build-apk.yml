@@ -3,7 +3,7 @@ name: Build WaliBell Play Release
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [ main, license-system-v1 ]
     paths:
       - 'app/**'
       - 'tools/**'
