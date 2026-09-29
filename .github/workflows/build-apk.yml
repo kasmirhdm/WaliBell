@@ -23,13 +23,13 @@ jobs:
       - name: Package project source
         run: |
           mkdir -p project-backup
-          zip -r project-backup/WaliBell_V4.4-Project.zip . -x "./.git/*" "./project-backup/*"
+          zip -r project-backup/WaliBell_V4.5-Project.zip . -x "./.git/*" "./project-backup/*"
       
       - name: Upload project source
         uses: actions/upload-artifact@v4
         with:
-          name: WaliBell-V4.4-Project-Source
-          path: project-backup/WaliBell_V4.4-Project.zip
+          name: WaliBell-V4.5-Project-Source
+          path: project-backup/WaliBell_V4.5-Project.zip
           if-no-files-found: error
 
       - name: Set up Java 17
@@ -85,19 +85,19 @@ jobs:
       - name: Prepare release files
         run: |
           mkdir -p release
-          cp app/build/outputs/bundle/release/app-release.aab release/WaliBell_V4.4-Play.aab
-          cp app/build/outputs/apk/release/app-release.apk release/WaliBell_V4.4-Free.apk
+          cp app/build/outputs/bundle/release/app-release.aab release/WaliBell_V4.5-Play.aab
+          cp app/build/outputs/apk/release/app-release.apk release/WaliBell_V4.5-Free.apk
 
       - name: Upload Play AAB
         uses: actions/upload-artifact@v4
         with:
-          name: WaliBell-V4.4-Play-AAB
-          path: release/WaliBell_V4.4-Play.aab
+          name: WaliBell-V4.5-Play-AAB
+          path: release/WaliBell_V4.5-Play.aab
           if-no-files-found: error
 
       - name: Upload Free APK
         uses: actions/upload-artifact@v4
         with:
-          name: WaliBell-V4.4-Free-APK
-          path: release/WaliBell_V4.4-Free.apk
+          name: WaliBell-V4.5-Free-APK
+          path: release/WaliBell_V4.5-Free.apk
           if-no-files-found: error
