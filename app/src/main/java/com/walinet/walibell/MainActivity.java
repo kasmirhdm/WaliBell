@@ -541,7 +541,7 @@ public class MainActivity extends ComponentActivity {
         TextView school=new TextView(this);school.setText(schoolName().toUpperCase(Locale.ROOT));school.setTextColor(Color.rgb(250,204,21));school.setTextSize(12);school.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
         heroText.addView(h1,new LinearLayout.LayoutParams(-1,dp(40)));heroText.addView(h2,new LinearLayout.LayoutParams(-1,dp(27)));heroText.addView(school,new LinearLayout.LayoutParams(-1,dp(24)));
         heroContent.addView(heroText,new LinearLayout.LayoutParams(0,-2,1));hero.addView(heroContent,new FrameLayout.LayoutParams(-1,-1,Gravity.CENTER));
-        page.addView(hero,new LinearLayout.LayoutParams(-1,dp(270)));
+        page.addView(hero,new LinearLayout.LayoutParams(-1,dp(135)));
 
         // ===== CLOCK & STATUS CARD =====
         LinearLayout statusCard=card();
