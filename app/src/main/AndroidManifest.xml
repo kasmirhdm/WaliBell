@@ -1,4 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET"/>
     <!-- WaliBell's core function requires user-controlled exact alarms. -->
     <!-- Keep SCHEDULE_EXACT_ALARM without maxSdkVersion so Android 12+ exposes
          the "Alarms & reminders" special-access page. Android documents that
