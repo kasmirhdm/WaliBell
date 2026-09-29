@@ -705,12 +705,12 @@ public class MainActivity extends ComponentActivity {
                         top.addView(stt,new LinearLayout.LayoutParams(dp(18),dp(17)));
                         item.addView(top);
                         TextView nm=tv(s.name,11);nm.setSingleLine(true);nm.setEllipsize(android.text.TextUtils.TruncateAt.END);item.addView(nm,new LinearLayout.LayoutParams(-1,dp(15)));
-                        LinearLayout.LayoutParams ip=new LinearLayout.LayoutParams(0,-1,1);ip.setMargins(dp(2),dp(1),dp(2),dp(1));line.addView(item,ip);
+                        LinearLayout.LayoutParams ip=new LinearLayout.LayoutParams(0,dp(72),1);ip.setMargins(dp(2),dp(1),dp(2),dp(1));line.addView(item,ip);
                     }else{
-                        Space empty=new Space(this);line.addView(empty,new LinearLayout.LayoutParams(0,-1,1));
+                        Space empty=new Space(this);line.addView(empty,new LinearLayout.LayoutParams(0,dp(72),1));
                     }
                 }
-                scheduleGrid.addView(line,new LinearLayout.LayoutParams(-1,0,1));
+                scheduleGrid.addView(line,new LinearLayout.LayoutParams(-1,dp(76)));
             }
         };
 
