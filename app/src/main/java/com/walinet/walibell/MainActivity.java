@@ -913,40 +913,42 @@ public class MainActivity extends ComponentActivity {
         clearContent();content.addView(header("Tentang","Informasi aplikasi"),new LinearLayout.LayoutParams(-1,dp(78)));
         LinearLayout page=new LinearLayout(this);page.setOrientation(LinearLayout.VERTICAL);page.setPadding(0,0,0,dp(56));
 
-        LinearLayout box=card();box.setGravity(Gravity.CENTER);
+        // Identitas aplikasi dibuat ringkas agar proporsional, sementara seluruh
+        // informasi dan alat tetap mudah dibaca dalam halaman yang dapat di-scroll.
+        LinearLayout box=card();box.setGravity(Gravity.CENTER);box.setPadding(dp(14),dp(8),dp(14),dp(8));
         TextView n=tv("WaliBell",28);n.setTypeface(Typeface.create("sans-serif-medium",Typeface.BOLD));n.setGravity(Gravity.CENTER);n.setTextColor(themeColor());
-        box.addView(n,new LinearLayout.LayoutParams(-1,dp(48)));
-        TextView v=tv("Versi 4.5\n\nSistem Bel Sekolah Otomatis\nProfesional, praktis, dan mudah dikelola\n\n"+schoolName()+"\n"+schoolLocation()+"\n\nPengelola Sistem\nKasmir, S.Pd\nOperator Sekolah",16);
-        v.setGravity(Gravity.CENTER);box.addView(v,new LinearLayout.LayoutParams(-1,dp(210)));
-        LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-1,dp(300));bp.setMargins(dp(8),dp(8),dp(8),0);page.addView(box,bp);
+        box.addView(n,new LinearLayout.LayoutParams(-1,dp(44)));
+        TextView v=tv("Versi 4.5\nSistem Bel Sekolah Otomatis\nProfesional, praktis, dan mudah dikelola\n\n"+schoolName()+"\n"+schoolLocation()+"\n\nPengelola Sistem\nKasmir, S.Pd\nOperator Sekolah",15);
+        v.setGravity(Gravity.CENTER);box.addView(v,new LinearLayout.LayoutParams(-1,dp(198)));
+        LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-1,dp(260));bp.setMargins(dp(8),dp(8),dp(8),0);page.addView(box,bp);
 
         TextView quote=tv("“Disiplin dimulai dari waktu”",18);quote.setTextColor(themeColor());quote.setGravity(Gravity.CENTER);
-        page.addView(quote,new LinearLayout.LayoutParams(-1,dp(58)));
+        page.addView(quote,new LinearLayout.LayoutParams(-1,dp(48)));
 
-        LinearLayout tools=card();
+        LinearLayout tools=card();tools.setPadding(dp(10),dp(8),dp(10),dp(8));
         TextView th=tv("Tampilan & Alat",17);th.setTypeface(Typeface.create("sans-serif-medium",Typeface.BOLD));
-        tools.addView(th,new LinearLayout.LayoutParams(-1,dp(32)));
+        tools.addView(th,new LinearLayout.LayoutParams(-1,dp(30)));
 
         Button identityBtn=toolInfoButton("Identitas Sekolah","Atur nama, lokasi, dan foto sekolah.",()->showSchoolIdentityDialog());
-        tools.addView(identityBtn,new LinearLayout.LayoutParams(-1,dp(64)));
+        tools.addView(identityBtn,new LinearLayout.LayoutParams(-1,dp(58)));
 
         Button themeBtn=toolInfoButton("Mode Gelap / Terang","Ubah tampilan sesuai kenyamanan pengguna.",()->toggleDarkMode());
-        tools.addView(themeBtn,new LinearLayout.LayoutParams(-1,dp(64)));
+        tools.addView(themeBtn,new LinearLayout.LayoutParams(-1,dp(58)));
 
         Button colorBtn=toolInfoButton("Warna Tema","Pilih warna utama tampilan WaliBell.",()->chooseTheme());
-        tools.addView(colorBtn,new LinearLayout.LayoutParams(-1,dp(64)));
+        tools.addView(colorBtn,new LinearLayout.LayoutParams(-1,dp(58)));
 
         Button kioskBtn=toolInfoButton("Mode Layar Penuh / Kiosk","Gunakan HP sebagai perangkat bel khusus.",()->showKioskPage());
-        tools.addView(kioskBtn,new LinearLayout.LayoutParams(-1,dp(64)));
+        tools.addView(kioskBtn,new LinearLayout.LayoutParams(-1,dp(58)));
 
         Button backupBtn=toolInfoButton("Backup Data Jadwal & Suara","Simpan jadwal, hari, dan suara ke satu file ZIP.",()->backupData());
-        tools.addView(backupBtn,new LinearLayout.LayoutParams(-1,dp(64)));
+        tools.addView(backupBtn,new LinearLayout.LayoutParams(-1,dp(58)));
 
         Button restoreBtn=toolInfoButton("Restore Data","Kembalikan jadwal dan suara dari file backup.",()->restoreData());
-        tools.addView(restoreBtn,new LinearLayout.LayoutParams(-1,dp(64)));
+        tools.addView(restoreBtn,new LinearLayout.LayoutParams(-1,dp(58)));
 
         Button alarmBtn=toolInfoButton("Cek Alarm & Pengingat","Pastikan izin alarm agar bel otomatis bekerja tepat waktu.",()->showExactAlarmStatus());
-        tools.addView(alarmBtn,new LinearLayout.LayoutParams(-1,dp(64)));
+        tools.addView(alarmBtn,new LinearLayout.LayoutParams(-1,dp(58)));
 
         LinearLayout.LayoutParams tp=new LinearLayout.LayoutParams(-1,-2);tp.setMargins(dp(8),dp(8),dp(8),dp(8));page.addView(tools,tp);
 
