@@ -812,10 +812,33 @@ public class MainActivity extends ComponentActivity {
         LinearLayout.LayoutParams ap=new LinearLayout.LayoutParams(-1,dp(48));ap.setMargins(dp(8),dp(6),dp(8),dp(8));content.addView(add,ap);render();
     }
 
+    void setupTimeInput(EditText time){
+        time.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+        time.setSingleLine(true);
+        time.addTextChangedListener(new android.text.TextWatcher(){
+            boolean changing=false;
+            @Override public void beforeTextChanged(CharSequence s,int start,int count,int after){}
+            @Override public void onTextChanged(CharSequence s,int start,int before,int count){}
+            @Override public void afterTextChanged(android.text.Editable e){
+                if(changing)return;
+                String digits=e.toString().replaceAll("[^0-9]","");
+                if(digits.length()>4)digits=digits.substring(0,4);
+                String formatted=digits.length()>2
+                    ?digits.substring(0,2)+":"+digits.substring(2)
+                    :digits;
+                if(!formatted.equals(e.toString())){
+                    changing=true;
+                    e.replace(0,e.length(),formatted);
+                    changing=false;
+                }
+            }
+        });
+    }
+
     void addSchedule(){
         LinearLayout form=new LinearLayout(this);form.setOrientation(LinearLayout.VERTICAL);form.setPadding(dp(4),dp(4),dp(4),0);
         EditText name=new EditText(this);name.setHint("Nama bel, misalnya Upacara");form.addView(name,new LinearLayout.LayoutParams(-1,dp(52)));
-        EditText time=new EditText(this);time.setHint("Waktu (HH:mm), misalnya 13:00");time.setInputType(2);form.addView(time,new LinearLayout.LayoutParams(-1,dp(52)));
+        EditText time=new EditText(this);time.setHint("Waktu (HH:mm), ketik 1300 untuk 13:00");setupTimeInput(time);form.addView(time,new LinearLayout.LayoutParams(-1,dp(52)));
         TextView dh=tv("Hari bel berbunyi",14);dh.setTypeface(Typeface.DEFAULT,Typeface.BOLD);form.addView(dh,new LinearLayout.LayoutParams(-1,dp(30)));
         dayChecks=addDayChecks(form,31);
         new AlertDialog.Builder(this).setTitle("Tambah Jadwal Bel").setView(form).setPositiveButton("Simpan",(d,w)->{
@@ -915,7 +938,7 @@ public class MainActivity extends ComponentActivity {
         LinearLayout box=card();box.setGravity(Gravity.CENTER);
         TextView n=tv("WaliBell",28);n.setTypeface(Typeface.create("sans-serif-medium",Typeface.BOLD));n.setGravity(Gravity.CENTER);n.setTextColor(themeColor());
         box.addView(n,new LinearLayout.LayoutParams(-1,dp(48)));
-        TextView v=tv("Versi 4.1\n\nSistem Bel Sekolah Otomatis\nProfesional, praktis, dan mudah dikelola\n\n"+schoolName()+"\n"+schoolLocation()+"\n\nPengelola Sistem\nKasmir, S.Pd\nOperator Sekolah",16);
+        TextView v=tv("Versi 4.2\n\nSistem Bel Sekolah Otomatis\nProfesional, praktis, dan mudah dikelola\n\n"+schoolName()+"\n"+schoolLocation()+"\n\nPengelola Sistem\nKasmir, S.Pd\nOperator Sekolah",16);
         v.setGravity(Gravity.CENTER);box.addView(v,new LinearLayout.LayoutParams(-1,dp(210)));
         LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-1,dp(300));bp.setMargins(dp(8),dp(8),dp(8),0);page.addView(box,bp);
 
@@ -1132,7 +1155,7 @@ public class MainActivity extends ComponentActivity {
         Schedule found=null;for(Schedule s:schedules)if(s.id==id){found=s;break;}if(found==null)return;final Schedule target=found;
         LinearLayout form=new LinearLayout(this);form.setOrientation(LinearLayout.VERTICAL);form.setPadding(dp(4),dp(4),dp(4),0);
         EditText name=new EditText(this);name.setText(target.name);name.setHint("Nama bel");form.addView(name,new LinearLayout.LayoutParams(-1,dp(52)));
-        EditText time=new EditText(this);time.setText(target.time);time.setHint("Waktu HH:mm");time.setInputType(2);form.addView(time,new LinearLayout.LayoutParams(-1,dp(52)));
+        EditText time=new EditText(this);time.setText(target.time);time.setHint("Waktu HH:mm, ketik 1300 untuk 13:00");setupTimeInput(time);form.addView(time,new LinearLayout.LayoutParams(-1,dp(52)));
         TextView dh=tv("Hari bel berbunyi",14);dh.setTypeface(Typeface.DEFAULT,Typeface.BOLD);form.addView(dh,new LinearLayout.LayoutParams(-1,dp(30)));
         dayChecks=addDayChecks(form,target.daysMask);
         new AlertDialog.Builder(this).setTitle("Edit Jadwal Bel").setView(form).setNeutralButton("Tes Suara",(d,w)->preview(target)).setPositiveButton("Simpan",(d,w)->{
