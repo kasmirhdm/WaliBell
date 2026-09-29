@@ -37,11 +37,22 @@ public final class LicenseManager {
     public static String getDeviceId(Context context){
         SharedPreferences p=context.getSharedPreferences(PREF, Context.MODE_PRIVATE);
         String id=p.getString(KEY_DEVICE, null);
-        if(id==null || id.trim().isEmpty()){
-            id=UUID.randomUUID().toString();
-            p.edit().putString(KEY_DEVICE,id).apply();
+        if(id!=null && !id.trim().isEmpty()) return id;
+
+        // Use Android's app-scoped stable device identifier instead of a random UUID.
+        // This keeps the same device identity across app reinstalls for the same
+        // Android device/signing identity, while different devices get different IDs.
+        String androidId=android.provider.Settings.Secure.getString(
+            context.getContentResolver(),
+            android.provider.Settings.Secure.ANDROID_ID
+        );
+        if(androidId==null || androidId.trim().isEmpty()){
+            androidId=UUID.randomUUID().toString();
+        }else{
+            androidId="ANDROID-"+androidId;
         }
-        return id;
+        p.edit().putString(KEY_DEVICE,androidId).apply();
+        return androidId;
     }
 
     public static String getExpiresAt(Context context){
