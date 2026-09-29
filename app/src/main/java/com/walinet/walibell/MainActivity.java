@@ -549,7 +549,8 @@ public class MainActivity extends ComponentActivity {
                         try{BellReceiver.rescheduleAll(this);}catch(Exception ignored){}
                         startBellService();
                         int target=pendingLicensePage>=0?pendingLicensePage:PAGE_HOME;
-                        pendingLicensePage=-1;\n                        showPage(target);
+                        pendingLicensePage=-1;
+                        showPage(target);
                     }else{
                         ok.setEnabled(true);
                         ok.setText("Aktifkan");
