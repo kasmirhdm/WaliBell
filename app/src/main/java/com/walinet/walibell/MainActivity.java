@@ -947,7 +947,7 @@ public class MainActivity extends ComponentActivity {
         LinearLayout box=card();box.setGravity(Gravity.CENTER);
         TextView n=tv("WaliBell",28);n.setTypeface(Typeface.create("sans-serif-medium",Typeface.BOLD));n.setGravity(Gravity.CENTER);n.setTextColor(themeColor());
         box.addView(n,new LinearLayout.LayoutParams(-1,dp(48)));
-        TextView v=tv("Versi 4.4\n\nSistem Bel Sekolah Otomatis\nProfesional, praktis, dan mudah dikelola\n\n"+schoolName()+"\n"+schoolLocation()+"\n\nPengelola Sistem\nKasmir, S.Pd\nOperator Sekolah",16);
+        TextView v=tv("Versi 4.5\n\nSistem Bel Sekolah Otomatis\nProfesional, praktis, dan mudah dikelola\n\n"+schoolName()+"\n"+schoolLocation()+"\n\nPengelola Sistem\nKasmir, S.Pd\nOperator Sekolah",16);
         v.setGravity(Gravity.CENTER);box.addView(v,new LinearLayout.LayoutParams(-1,dp(210)));
         LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-1,dp(300));bp.setMargins(dp(8),dp(8),dp(8),0);page.addView(box,bp);
 
