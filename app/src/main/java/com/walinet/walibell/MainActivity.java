@@ -635,11 +635,11 @@ public class MainActivity extends ComponentActivity {
                 mb.setCompoundDrawablesWithIntrinsicBounds(manualIcons[index],0,0,0);mb.setCompoundDrawablePadding(dp(2));mb.setPadding(dp(1),0,dp(1),0);
                 mb.setBackground(bg(manualColors[index]));mb.setTextColor(index==5?Color.WHITE:Color.rgb(15,55,80));if(index==5)mb.setBackground(stadiumBg(Color.rgb(7,55,90)));
                 mb.setOnClickListener(v->{v.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);playManualBell(index);});
-                LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(0,dp(45),1);bp.setMargins(dp(2),dp(1),dp(2),dp(1));line.addView(mb,bp);
+                LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(0,dp(51),1);bp.setMargins(dp(2),dp(1),dp(2),dp(1));line.addView(mb,bp);
             }
-            grid.addView(line,new LinearLayout.LayoutParams(-1,dp(35)));
+            grid.addView(line,new LinearLayout.LayoutParams(-1,dp(56)));
         }
-        page.addView(grid,new LinearLayout.LayoutParams(-1,dp(104)));
+        page.addView(grid,new LinearLayout.LayoutParams(-1,dp(116)));
 
         // ===== TODAY SCHEDULE: 2 kolom agar enam jadwal tetap terlihat =====
         LinearLayout todayTitle=new LinearLayout(this);todayTitle.setGravity(Gravity.CENTER_VERTICAL);
