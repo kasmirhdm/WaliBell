@@ -556,182 +556,117 @@ public class MainActivity extends ComponentActivity {
     void showHome(){
         clearContent();
 
-        ScrollView scroll=new ScrollView(this);
-        scroll.setFillViewport(true);
-        scroll.setClipToPadding(false);
+        // Beranda dibuat compact agar seluruh informasi utama muat dalam satu
+        // layar tanpa scroll pada layar HP sekolah yang relatif kecil.
         LinearLayout page=new LinearLayout(this);
         page.setOrientation(LinearLayout.VERTICAL);
-        page.setPadding(dp(10),dp(8),dp(10),dp(18));
+        page.setPadding(dp(6),dp(4),dp(6),dp(4));
 
         // ===== SCHOOL PHOTO HERO =====
         FrameLayout hero=new FrameLayout(this);hero.setClipToOutline(true);
-        GradientDrawable heroShape=new GradientDrawable();heroShape.setCornerRadius(dp(24));heroShape.setColor(Color.rgb(8,47,73));hero.setBackground(heroShape);hero.setElevation(dp(5));
+        GradientDrawable heroShape=new GradientDrawable();heroShape.setCornerRadius(dp(18));heroShape.setColor(Color.rgb(8,47,73));hero.setBackground(heroShape);hero.setElevation(dp(2));
         ImageView heroPhoto=new ImageView(this);heroPhoto.setImageBitmap(schoolPhotoBitmap());heroPhoto.setScaleType(ImageView.ScaleType.CENTER_CROP);hero.addView(heroPhoto,new FrameLayout.LayoutParams(-1,-1));
         View darkOverlay=new View(this);darkOverlay.setBackgroundColor(Color.argb(125,0,25,45));hero.addView(darkOverlay,new FrameLayout.LayoutParams(-1,-1));
-        LinearLayout heroContent=new LinearLayout(this);heroContent.setOrientation(LinearLayout.HORIZONTAL);heroContent.setGravity(Gravity.CENTER_VERTICAL);heroContent.setPadding(dp(22),dp(12),dp(18),dp(12));
-        ImageView bellIcon=new ImageView(this);bellIcon.setImageResource(R.drawable.ic_bell);bellIcon.setColorFilter(Color.rgb(250,204,21),android.graphics.PorterDuff.Mode.SRC_IN);heroContent.addView(bellIcon,new LinearLayout.LayoutParams(dp(58),dp(58)));
-        LinearLayout heroText=new LinearLayout(this);heroText.setOrientation(LinearLayout.VERTICAL);heroText.setPadding(dp(14),0,0,0);
-        TextView h1=new TextView(this);h1.setText("WaliBell");h1.setTextColor(Color.WHITE);h1.setTextSize(30);h1.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-        TextView h2=new TextView(this);h2.setText("Bel Sekolah Otomatis");h2.setTextColor(Color.WHITE);h2.setTextSize(15);
-        TextView school=new TextView(this);school.setText(schoolName().toUpperCase(Locale.ROOT));school.setTextColor(Color.rgb(250,204,21));school.setTextSize(12);school.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-        heroText.addView(h1,new LinearLayout.LayoutParams(-1,dp(40)));heroText.addView(h2,new LinearLayout.LayoutParams(-1,dp(27)));heroText.addView(school,new LinearLayout.LayoutParams(-1,dp(24)));
+        LinearLayout heroContent=new LinearLayout(this);heroContent.setOrientation(LinearLayout.HORIZONTAL);heroContent.setGravity(Gravity.CENTER_VERTICAL);heroContent.setPadding(dp(14),dp(3),dp(12),dp(3));
+        ImageView bellIcon=new ImageView(this);bellIcon.setImageResource(R.drawable.ic_bell);bellIcon.setColorFilter(Color.rgb(250,204,21),android.graphics.PorterDuff.Mode.SRC_IN);heroContent.addView(bellIcon,new LinearLayout.LayoutParams(dp(38),dp(38)));
+        LinearLayout heroText=new LinearLayout(this);heroText.setOrientation(LinearLayout.VERTICAL);heroText.setPadding(dp(8),0,0,0);
+        TextView h1=new TextView(this);h1.setText("WaliBell");h1.setTextColor(Color.WHITE);h1.setTextSize(22);h1.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+        TextView h2=new TextView(this);h2.setText("Bel Sekolah Otomatis");h2.setTextColor(Color.WHITE);h2.setTextSize(12);
+        TextView school=new TextView(this);school.setText(schoolName().toUpperCase(Locale.ROOT));school.setTextColor(Color.rgb(250,204,21));school.setTextSize(10);school.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+        heroText.addView(h1,new LinearLayout.LayoutParams(-1,dp(27)));heroText.addView(h2,new LinearLayout.LayoutParams(-1,dp(19)));heroText.addView(school,new LinearLayout.LayoutParams(-1,dp(17)));
         heroContent.addView(heroText,new LinearLayout.LayoutParams(0,-2,1));hero.addView(heroContent,new FrameLayout.LayoutParams(-1,-1,Gravity.CENTER));
-        page.addView(hero,new LinearLayout.LayoutParams(-1,dp(135)));
+        page.addView(hero,new LinearLayout.LayoutParams(-1,dp(72)));
 
-        // ===== CLOCK & STATUS CARD =====
+        // ===== CLOCK & STATUS =====
         LinearLayout statusCard=card();
-        statusCard.setPadding(dp(16),dp(14),dp(16),dp(14));
-        statusCard.setElevation(dp(4));
+        statusCard.setPadding(dp(10),dp(5),dp(10),dp(5));
+        statusCard.setElevation(dp(2));
+        LinearLayout cols=new LinearLayout(this);cols.setOrientation(LinearLayout.HORIZONTAL);
 
-        LinearLayout cols=new LinearLayout(this);
-        cols.setOrientation(LinearLayout.HORIZONTAL);
+        LinearLayout left=new LinearLayout(this);left.setOrientation(LinearLayout.VERTICAL);
+        TextView date=tv("",10);date.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+        TextView clock=tv("",24);clock.setTypeface(Typeface.DEFAULT,Typeface.BOLD);clock.setTextColor(Color.rgb(7,55,90));
+        left.addView(date,new LinearLayout.LayoutParams(-1,dp(18)));
+        left.addView(clock,new LinearLayout.LayoutParams(-1,dp(29)));
+        cols.addView(left,new LinearLayout.LayoutParams(0,dp(50),1.15f));
 
-        LinearLayout left=new LinearLayout(this);
-        left.setOrientation(LinearLayout.VERTICAL);
-        TextView date=tv("",14);
-        date.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-        TextView clock=tv("",30);
-        clock.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-        clock.setTextColor(Color.rgb(7,55,90));
-        left.addView(date,new LinearLayout.LayoutParams(-1,dp(28)));
-        left.addView(clock,new LinearLayout.LayoutParams(-1,dp(46)));
-        cols.addView(left,new LinearLayout.LayoutParams(0,-2,1.25f));
-
-        LinearLayout right=new LinearLayout(this);
-        right.setOrientation(LinearLayout.VERTICAL);
-        right.setPadding(dp(10),0,0,0);
-        LinearLayout activeRow=new LinearLayout(this);
-        activeRow.setGravity(Gravity.CENTER_VERTICAL);
-        TextView activeText=tv("",15);
-        activeText.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-        activeText.setTextColor(Color.rgb(22,101,52));
-        Switch bellSwitch=new Switch(this);
-        bellSwitch.setChecked(getSharedPreferences("ui",0).getBoolean("bell_enabled",true));
-        activeRow.addView(activeText,new LinearLayout.LayoutParams(0,dp(34),1));
-        activeRow.addView(bellSwitch,new LinearLayout.LayoutParams(dp(54),dp(42)));
+        LinearLayout right=new LinearLayout(this);right.setOrientation(LinearLayout.VERTICAL);right.setPadding(dp(5),0,0,0);
+        LinearLayout activeRow=new LinearLayout(this);activeRow.setGravity(Gravity.CENTER_VERTICAL);
+        TextView activeText=tv("",11);activeText.setTypeface(Typeface.DEFAULT,Typeface.BOLD);activeText.setTextColor(Color.rgb(22,101,52));
+        Switch bellSwitch=new Switch(this);bellSwitch.setChecked(getSharedPreferences("ui",0).getBoolean("bell_enabled",true));
+        activeRow.addView(activeText,new LinearLayout.LayoutParams(0,dp(24),1));
+        activeRow.addView(bellSwitch,new LinearLayout.LayoutParams(dp(48),dp(30)));
         right.addView(activeRow);
-
-        LinearLayout btRow=new LinearLayout(this);
-        btRow.setGravity(Gravity.CENTER_VERTICAL);
-        TextView btIcon=tv("ᛒ",18);
-        btIcon.setTextColor(Color.rgb(100,116,139));
-        TextView btText=tv("",12);
-        btRow.addView(btIcon,new LinearLayout.LayoutParams(dp(24),dp(28)));
-        btRow.addView(btText,new LinearLayout.LayoutParams(0,dp(30),1));
+        LinearLayout btRow=new LinearLayout(this);btRow.setGravity(Gravity.CENTER_VERTICAL);
+        TextView btIcon=tv("ᛒ",13);btIcon.setTextColor(Color.rgb(100,116,139));
+        TextView btText=tv("",9);btRow.addView(btIcon,new LinearLayout.LayoutParams(dp(18),dp(20)));btRow.addView(btText,new LinearLayout.LayoutParams(0,dp(20),1));
         right.addView(btRow);
-
-        TextView activeStatus=tv("",12);
-        activeStatus.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-        activeStatus.setTextColor(Color.rgb(22,163,74));
-        right.addView(activeStatus,new LinearLayout.LayoutParams(-1,dp(27)));
-        cols.addView(right,new LinearLayout.LayoutParams(0,-2,1));
+        TextView activeStatus=tv("",9);activeStatus.setTypeface(Typeface.DEFAULT,Typeface.BOLD);activeStatus.setTextColor(Color.rgb(22,163,74));
+        right.addView(activeStatus,new LinearLayout.LayoutParams(-1,dp(17)));
+        cols.addView(right,new LinearLayout.LayoutParams(0,dp(50),1));
         statusCard.addView(cols);
-        LinearLayout.LayoutParams scp=new LinearLayout.LayoutParams(-1,-2);
-        scp.setMargins(0,dp(10),0,0);
-        page.addView(statusCard,scp);
+        LinearLayout.LayoutParams scp=new LinearLayout.LayoutParams(-1,dp(60));scp.setMargins(0,dp(4),0,0);page.addView(statusCard,scp);
 
         // ===== NEXT SCHEDULE =====
-        LinearLayout nextCard=new LinearLayout(this);
-        nextCard.setOrientation(LinearLayout.HORIZONTAL);
-        nextCard.setGravity(Gravity.CENTER_VERTICAL);
-        nextCard.setPadding(dp(16),dp(10),dp(16),dp(10));
-        GradientDrawable nextBg=bg(Color.rgb(224,242,254));
-        nextCard.setBackground(nextBg);
-        nextCard.setElevation(dp(2));
-        ImageView alarmIcon=new ImageView(this);
-        alarmIcon.setImageResource(R.drawable.ic_schedule);
-        alarmIcon.setColorFilter(Color.rgb(220,38,38),android.graphics.PorterDuff.Mode.SRC_IN);
-        nextCard.addView(alarmIcon,new LinearLayout.LayoutParams(dp(32),dp(32)));
-        TextView nextText=tv("",14);
-        nextText.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-        nextText.setTextColor(Color.rgb(15,55,80));
-        nextCard.addView(nextText,new LinearLayout.LayoutParams(0,dp(44),1));
-        LinearLayout.LayoutParams ncp=new LinearLayout.LayoutParams(-1,dp(64));
-        ncp.setMargins(0,dp(10),0,0);
-        page.addView(nextCard,ncp);
+        LinearLayout nextCard=new LinearLayout(this);nextCard.setOrientation(LinearLayout.HORIZONTAL);nextCard.setGravity(Gravity.CENTER_VERTICAL);
+        nextCard.setPadding(dp(10),dp(3),dp(10),dp(3));nextCard.setBackground(bg(Color.rgb(224,242,254)));nextCard.setElevation(dp(1));
+        ImageView alarmIcon=new ImageView(this);alarmIcon.setImageResource(R.drawable.ic_schedule);alarmIcon.setColorFilter(Color.rgb(220,38,38),android.graphics.PorterDuff.Mode.SRC_IN);
+        nextCard.addView(alarmIcon,new LinearLayout.LayoutParams(dp(24),dp(24)));
+        TextView nextText=tv("",10);nextText.setTypeface(Typeface.DEFAULT,Typeface.BOLD);nextText.setTextColor(Color.rgb(15,55,80));
+        nextCard.addView(nextText,new LinearLayout.LayoutParams(0,dp(34),1));
+        LinearLayout.LayoutParams ncp=new LinearLayout.LayoutParams(-1,dp(40));ncp.setMargins(0,dp(4),0,0);page.addView(nextCard,ncp);
 
         // ===== MANUAL BELL =====
-        LinearLayout manualTitle=new LinearLayout(this);
-        manualTitle.setGravity(Gravity.CENTER_VERTICAL);
-        ImageView mi=new ImageView(this);mi.setImageResource(R.drawable.ic_bell);
-        mi.setColorFilter(Color.rgb(7,55,90),android.graphics.PorterDuff.Mode.SRC_IN);
-        manualTitle.addView(mi,new LinearLayout.LayoutParams(dp(25),dp(25)));
-        TextView mt=tv("Bel Manual",17);mt.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-        manualTitle.addView(mt,new LinearLayout.LayoutParams(-1,dp(32)));
-        LinearLayout.LayoutParams mtp=new LinearLayout.LayoutParams(-1,dp(34));
-        mtp.setMargins(0,dp(10),0,0);page.addView(manualTitle,mtp);
+        LinearLayout manualTitle=new LinearLayout(this);manualTitle.setGravity(Gravity.CENTER_VERTICAL);
+        ImageView mi=new ImageView(this);mi.setImageResource(R.drawable.ic_bell);mi.setColorFilter(Color.rgb(7,55,90),android.graphics.PorterDuff.Mode.SRC_IN);
+        manualTitle.addView(mi,new LinearLayout.LayoutParams(dp(19),dp(19)));
+        TextView mt=tv("Bel Manual",14);mt.setTypeface(Typeface.DEFAULT,Typeface.BOLD);manualTitle.addView(mt,new LinearLayout.LayoutParams(-1,dp(22)));
+        LinearLayout.LayoutParams mtp=new LinearLayout.LayoutParams(-1,dp(22));mtp.setMargins(0,dp(4),0,0);page.addView(manualTitle,mtp);
 
-        LinearLayout grid=new LinearLayout(this);
-        grid.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout grid=new LinearLayout(this);grid.setOrientation(LinearLayout.VERTICAL);
         String[] manualNames={"BEL MASUK","PERGANTIAN","ISTIRAHAT","MASUK SETELAH ISTIRAHAT","BEL PULANG","BUNYIKAN SEKARANG"};
-        int[] manualColors={
-            Color.rgb(219,239,255),Color.rgb(255,239,204),Color.rgb(220,247,226),
-            Color.rgb(237,225,255),Color.rgb(255,225,232),Color.rgb(7,55,90)
-        };
+        int[] manualColors={Color.rgb(219,239,255),Color.rgb(255,239,204),Color.rgb(220,247,226),Color.rgb(237,225,255),Color.rgb(255,225,232),Color.rgb(7,55,90)};
         int[] manualIcons={R.drawable.ic_bell,R.drawable.ic_schedule,R.drawable.ic_music,R.drawable.ic_devices,R.drawable.ic_home,R.drawable.ic_music};
         for(int row=0;row<2;row++){
-            LinearLayout line=new LinearLayout(this);
-            line.setOrientation(LinearLayout.HORIZONTAL);
+            LinearLayout line=new LinearLayout(this);line.setOrientation(LinearLayout.HORIZONTAL);
             for(int col=0;col<3;col++){
                 final int index=row*3+col;
-                Button mb=actionButton(manualNames[index]);
-                mb.setTextSize(index==3?10:11);
-                mb.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-                mb.setGravity(Gravity.CENTER);
-                mb.setCompoundDrawablesWithIntrinsicBounds(manualIcons[index],0,0,0);
-                mb.setCompoundDrawablePadding(dp(5));
-                mb.setPadding(dp(3),0,dp(3),0);
-                mb.setBackground(bg(manualColors[index]));
-                mb.setTextColor(index==5?Color.WHITE:Color.rgb(15,55,80));
-                if(index==5)mb.setBackground(stadiumBg(Color.rgb(7,55,90)));
-                mb.setOnClickListener(v->{
-                    v.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
-                    playManualBell(index);
-                });
-                LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(0,dp(62),1);
-                bp.setMargins(dp(3),dp(3),dp(3),dp(3));
-                line.addView(mb,bp);
+                Button mb=actionButton(manualNames[index]);mb.setTextSize(index==3?8:9);mb.setTypeface(Typeface.DEFAULT,Typeface.BOLD);mb.setGravity(Gravity.CENTER);
+                mb.setCompoundDrawablesWithIntrinsicBounds(manualIcons[index],0,0,0);mb.setCompoundDrawablePadding(dp(2));mb.setPadding(dp(1),0,dp(1),0);
+                mb.setBackground(bg(manualColors[index]));mb.setTextColor(index==5?Color.WHITE:Color.rgb(15,55,80));if(index==5)mb.setBackground(stadiumBg(Color.rgb(7,55,90)));
+                mb.setOnClickListener(v->{v.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);playManualBell(index);});
+                LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(0,dp(32),1);bp.setMargins(dp(2),dp(1),dp(2),dp(1));line.addView(mb,bp);
             }
-            grid.addView(line,new LinearLayout.LayoutParams(-1,dp(68)));
+            grid.addView(line,new LinearLayout.LayoutParams(-1,dp(35)));
         }
         page.addView(grid);
 
-        // ===== TODAY SCHEDULE =====
-        LinearLayout todayTitle=new LinearLayout(this);
-        todayTitle.setGravity(Gravity.CENTER_VERTICAL);
-        ImageView ci=new ImageView(this);ci.setImageResource(R.drawable.ic_schedule);
-        ci.setColorFilter(Color.rgb(7,55,90),android.graphics.PorterDuff.Mode.SRC_IN);
-        todayTitle.addView(ci,new LinearLayout.LayoutParams(dp(25),dp(25)));
-        LinearLayout todayWords=new LinearLayout(this);
-        todayWords.setOrientation(LinearLayout.VERTICAL);
-        TextView tt=tv("Jadwal Hari Ini",17);tt.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-        TextView count=tv("",11);
-        todayWords.addView(tt,new LinearLayout.LayoutParams(-1,dp(25)));
-        todayWords.addView(count,new LinearLayout.LayoutParams(-1,dp(20)));
-        todayTitle.addView(todayWords,new LinearLayout.LayoutParams(0,dp(45),1));
-        LinearLayout.LayoutParams ttp=new LinearLayout.LayoutParams(-1,dp(48));
-        ttp.setMargins(0,dp(12),0,0);page.addView(todayTitle,ttp);
+        // ===== TODAY SCHEDULE: 2 kolom agar enam jadwal tetap terlihat =====
+        LinearLayout todayTitle=new LinearLayout(this);todayTitle.setGravity(Gravity.CENTER_VERTICAL);
+        ImageView ci=new ImageView(this);ci.setImageResource(R.drawable.ic_schedule);ci.setColorFilter(Color.rgb(7,55,90),android.graphics.PorterDuff.Mode.SRC_IN);
+        todayTitle.addView(ci,new LinearLayout.LayoutParams(dp(19),dp(19)));
+        LinearLayout todayWords=new LinearLayout(this);todayWords.setOrientation(LinearLayout.VERTICAL);
+        TextView tt=tv("Jadwal Hari Ini",14);tt.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+        TextView count=tv("",9);todayWords.addView(tt,new LinearLayout.LayoutParams(-1,dp(17)));todayWords.addView(count,new LinearLayout.LayoutParams(-1,dp(13)));
+        todayTitle.addView(todayWords,new LinearLayout.LayoutParams(0,dp(30),1));
+        LinearLayout.LayoutParams ttp=new LinearLayout.LayoutParams(-1,dp(30));ttp.setMargins(0,dp(4),0,0);page.addView(todayTitle,ttp);
 
-        LinearLayout scheduleList=new LinearLayout(this);
-        scheduleList.setOrientation(LinearLayout.VERTICAL);
-        page.addView(scheduleList,new LinearLayout.LayoutParams(-1,-2));
+        LinearLayout scheduleGrid=new LinearLayout(this);scheduleGrid.setOrientation(LinearLayout.VERTICAL);
+        page.addView(scheduleGrid,new LinearLayout.LayoutParams(-1,0,1));
 
-        scroll.addView(page);
-        content.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
-
+        // Pastikan isi hari ini dapat dirender tanpa ScrollView.
         Runnable refresh=()->{
             Calendar now=Calendar.getInstance();
             date.setText(new SimpleDateFormat("EEEE, dd MMMM yyyy",new Locale("id","ID")).format(now.getTime()));
             clock.setText(new SimpleDateFormat("HH:mm:ss",Locale.getDefault()).format(now.getTime()));
 
             Schedule next=getNextSchedule();
-            if(next==null){
-                nextText.setText("Berikutnya: Tidak ada jadwal");
-            }else{
+            if(next==null) nextText.setText("Berikutnya: Tidak ada jadwal");
+            else{
                 Calendar target=nextOccurrence(next);
                 long diff=Math.max(0,target.getTimeInMillis()-now.getTimeInMillis())/60000;
-                String remain=diff<1?"kurang dari 1 menit":(diff+" menit lagi");
-                nextText.setText("Berikutnya: "+next.name+"  •  "+next.time+"\n"+remain);
+                String remain=diff<1?"< 1 menit":(diff+" menit lagi");
+                nextText.setText("Berikutnya: "+next.name+" • "+next.time+"  |  "+remain);
             }
 
             boolean connected=isBluetoothConnected();
@@ -742,52 +677,48 @@ public class MainActivity extends ComponentActivity {
             activeStatus.setText(bellSwitch.isChecked()?"✓ Sistem berjalan":"Bel otomatis tidak aktif");
             activeStatus.setTextColor(bellSwitch.isChecked()?Color.rgb(22,163,74):Color.rgb(148,163,184));
 
-            scheduleList.removeAllViews();
+            scheduleGrid.removeAllViews();
             Calendar today=Calendar.getInstance();
             int todayBit=1<<((today.get(Calendar.DAY_OF_WEEK)+5)%7);
             ArrayList<Schedule> todaySchedules=new ArrayList<>();
             for(Schedule s:schedules)if((s.daysMask&todayBit)!=0)todaySchedules.add(s);
-            Collections.sort(todaySchedules,(a,b)->a.time.compareTo(b.time));
+            Collections.sort(todaySchedules,(x,y)->x.time.compareTo(y.time));
             count.setText(todaySchedules.size()+" waktu");
-            for(Schedule s:todaySchedules){
-                LinearLayout item=new LinearLayout(this);
-                item.setGravity(Gravity.CENTER_VERTICAL);
-                item.setPadding(dp(12),dp(5),dp(10),dp(5));
-                item.setBackground(bg(darkMode()?Color.rgb(27,38,43):Color.rgb(248,250,249)));
-                item.setElevation(dp(1));
-                TextView tm=tv(s.time,16);tm.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-                item.addView(tm,new LinearLayout.LayoutParams(dp(62),dp(48)));
-                TextView nm=tv(s.name,14);
-                item.addView(nm,new LinearLayout.LayoutParams(0,dp(48),1));
-                boolean done=isScheduleTimePassed(s.time);
-                TextView stt=tv(done?"✓ Selesai":"◷ Menunggu",12);
-                stt.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-                stt.setGravity(Gravity.CENTER);
-                stt.setTextColor(done?Color.rgb(22,163,74):Color.rgb(220,38,38));
-                item.addView(stt,new LinearLayout.LayoutParams(dp(72),dp(48)));
-                LinearLayout.LayoutParams ip=new LinearLayout.LayoutParams(-1,dp(58));
-                ip.setMargins(0,dp(3),0,dp(3));
-                scheduleList.addView(item,ip);
+
+            for(int row=0;row<3;row++){
+                LinearLayout line=new LinearLayout(this);line.setOrientation(LinearLayout.HORIZONTAL);
+                for(int col=0;col<2;col++){
+                    int idx=row*2+col;
+                    if(idx<todaySchedules.size()){
+                        Schedule s=todaySchedules.get(idx);
+                        LinearLayout item=new LinearLayout(this);item.setOrientation(LinearLayout.VERTICAL);item.setGravity(Gravity.CENTER_VERTICAL);
+                        item.setPadding(dp(7),dp(2),dp(7),dp(2));item.setBackground(bg(darkMode()?Color.rgb(27,38,43):Color.rgb(248,250,249)));item.setElevation(dp(1));
+                        LinearLayout top=new LinearLayout(this);top.setGravity(Gravity.CENTER_VERTICAL);
+                        TextView tm=tv(s.time,10);tm.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+                        top.addView(tm,new LinearLayout.LayoutParams(dp(39),dp(17)));
+                        boolean done=isScheduleTimePassed(s.time);
+                        TextView stt=tv(done?"✓":"◷",9);stt.setTypeface(Typeface.DEFAULT,Typeface.BOLD);stt.setGravity(Gravity.CENTER);
+                        stt.setTextColor(done?Color.rgb(22,163,74):Color.rgb(220,38,38));
+                        top.addView(stt,new LinearLayout.LayoutParams(dp(18),dp(17)));
+                        item.addView(top);
+                        TextView nm=tv(s.name,9);nm.setSingleLine(true);nm.setEllipsize(android.text.TextUtils.TruncateAt.END);item.addView(nm,new LinearLayout.LayoutParams(-1,dp(15)));
+                        LinearLayout.LayoutParams ip=new LinearLayout.LayoutParams(0,dp(34),1);ip.setMargins(dp(2),dp(1),dp(2),dp(1));line.addView(item,ip);
+                    }else{
+                        Space empty=new Space(this);line.addView(empty,new LinearLayout.LayoutParams(0,dp(34),1));
+                    }
+                }
+                scheduleGrid.addView(line,new LinearLayout.LayoutParams(-1,dp(36)));
             }
-            if(todaySchedules.isEmpty()){
-                TextView empty=tv("Tidak ada jadwal untuk hari ini.",13);
-                empty.setPadding(dp(12),dp(8),dp(12),dp(8));
-                scheduleList.addView(empty);
-            }
-            scroll.post(()->{});
         };
+
         bellSwitch.setOnCheckedChangeListener((buttonView,isChecked)->{
             getSharedPreferences("ui",0).edit().putBoolean("bell_enabled",isChecked).apply();
-            if(isChecked)BellReceiver.rescheduleAll(this);
-            else BellReceiver.rescheduleAll(this);
+            BellReceiver.rescheduleAll(this);
             activeText.setText(isChecked?"Bel Aktif":"Bel Nonaktif");
             activeStatus.setText(isChecked?"✓ Sistem berjalan":"Bel otomatis tidak aktif");
         });
         homeTicker=()->{
-            if(currentPage==PAGE_HOME){
-                refresh.run();
-                homeHandler.postDelayed(homeTicker,1000);
-            }
+            if(currentPage==PAGE_HOME){refresh.run();homeHandler.postDelayed(homeTicker,1000);}
         };
         refresh.run();
         homeHandler.postDelayed(homeTicker,1000);
