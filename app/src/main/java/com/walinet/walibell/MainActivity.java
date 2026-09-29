@@ -561,6 +561,9 @@ public class MainActivity extends ComponentActivity {
     }
 
     void showPage(int page){
+        if(page==PAGE_SCHEDULE||page==PAGE_SOUND||page==PAGE_DEVICE){
+            if(!requireLicense())return;
+        }
         if(homeTicker!=null)homeHandler.removeCallbacks(homeTicker);
         currentPage=page;
         kioskMode=false;
@@ -819,6 +822,7 @@ public class MainActivity extends ComponentActivity {
     }
 
     void playManualBell(int index){
+        if(!requireLicense())return;
         String[] keys;
         switch(index){
             case 0:keys=new String[]{"masuk"};break;
