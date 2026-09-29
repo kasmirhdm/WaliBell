@@ -1179,15 +1179,100 @@ public class MainActivity extends ComponentActivity {
         new AlertDialog.Builder(this).setTitle("Rekam suara").setView(e).setPositiveButton("Mulai",(d,w)->startRecording(e.getText().toString().trim())).setNegativeButton("Batal",null).show();
     }
     void startRecording(String name){
-        if(name.isEmpty())name="Rekaman Saya";final String recordingName=name;
+        if(name.isEmpty())name="Rekaman Saya";
+        final String recordingName=name;
+        final Schedule target=findScheduleById(editingId);
+        if(target==null){
+            Toast.makeText(this,"Jadwal suara tidak ditemukan.",Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         try{
             recordPath=new File(getExternalFilesDir(null),"walibell_"+System.currentTimeMillis()+".m4a").getAbsolutePath();
-            recorder=new MediaRecorder(this);recorder.setAudioSource(MediaRecorder.AudioSource.MIC);recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);recorder.setOutputFile(recordPath);recorder.prepare();recorder.start();
-            new AlertDialog.Builder(this).setTitle("Sedang merekam").setMessage("Tekan STOP setelah selesai").setPositiveButton("STOP",(d,w)->{
-                try{recorder.stop();recorder.release();}catch(Exception ignored){}
-                Schedule s=schedules.get(editingId);s.audioName=recordingName;s.audioUri=Uri.fromFile(new File(recordPath)).toString();s.rawId=0;save();showPage(currentPage);BellReceiver.rescheduleAll(this);
-            }).setOnCancelListener(d->{try{recorder.stop();recorder.release();}catch(Exception ignored){}}).show();
-        }catch(Exception e){Toast.makeText(this,"Gagal merekam",Toast.LENGTH_SHORT).show();}
+
+            // Gunakan MediaRecorder tanpa Context agar kompatibel dengan seluruh
+            // rentang minSdk WaliBell dan hindari masalah lifecycle pada Android baru.
+            recorder=new MediaRecorder();
+            recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+            recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+            recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+            recorder.setAudioSamplingRate(44100);
+            recorder.setAudioEncodingBitRate(128000);
+            recorder.setOutputFile(recordPath);
+            recorder.prepare();
+            recorder.start();
+
+            // Dialog rekaman dibuat non-cancelable. Sebelumnya dialog dapat
+            // tertutup oleh sentuhan/back sehingga onCancel() langsung memanggil
+            // recorder.stop(), membuat rekaman terlihat seperti berhenti sendiri.
+            final TextView status=new TextView(this);
+            status.setText("Sedang merekam...\\n\\n00:00");
+            status.setTextSize(17);
+            status.setTextColor(textColor());
+            status.setPadding(dp(4),dp(4),dp(4),dp(4));
+
+            final Handler timerHandler=new Handler(Looper.getMainLooper());
+            final long startedAt=SystemClock.elapsedRealtime();
+            final Runnable[] ticker=new Runnable[1];
+            final AlertDialog[] dialogRef=new AlertDialog[1];
+
+            ticker[0]=()->{
+                long sec=Math.max(0,(SystemClock.elapsedRealtime()-startedAt)/1000);
+                long min=sec/60, s=sec%60;
+                status.setText("Sedang merekam...\\n\\n"+String.format(Locale.getDefault(),"%02d:%02d",min,s));
+                if(dialogRef[0]!=null&&dialogRef[0].isShowing())timerHandler.postDelayed(ticker[0],1000);
+            };
+
+            AlertDialog dialog=new AlertDialog.Builder(this)
+                .setTitle("Sedang merekam")
+                .setView(status)
+                .setNegativeButton("BATAL",(d,w)->{
+                    timerHandler.removeCallbacks(ticker[0]);
+                    try{if(recorder!=null){recorder.stop();recorder.release();}}catch(Exception ignored){}
+                    recorder=null;
+                    try{new File(recordPath).delete();}catch(Exception ignored){}
+                })
+                .setPositiveButton("STOP",(d,w)->{
+                    timerHandler.removeCallbacks(ticker[0]);
+                    try{
+                        if(recorder!=null){
+                            recorder.stop();
+                            recorder.release();
+                        }
+                        recorder=null;
+                        target.audioName=recordingName;
+                        target.audioUri=Uri.fromFile(new File(recordPath)).toString();
+                        target.rawId=0;
+                        save();
+                        BellReceiver.rescheduleAll(this);
+                        showPage(currentPage);
+                        Toast.makeText(this,"Rekaman berhasil disimpan.",Toast.LENGTH_SHORT).show();
+                    }catch(Exception e){
+                        try{if(recorder!=null)recorder.release();}catch(Exception ignored){}
+                        recorder=null;
+                        try{new File(recordPath).delete();}catch(Exception ignored){}
+                        Toast.makeText(this,"Rekaman gagal disimpan: "+e.getClass().getSimpleName(),Toast.LENGTH_LONG).show();
+                    }
+                })
+                .create();
+
+            dialog.setCancelable(false);
+            dialog.setCanceledOnTouchOutside(false);
+            dialog.setOnDismissListener(d->timerHandler.removeCallbacks(ticker[0]));
+            dialogRef[0]=dialog;
+            dialog.show();
+            timerHandler.post(ticker[0]);
+
+        }catch(Exception e){
+            try{if(recorder!=null)recorder.release();}catch(Exception ignored){}
+            recorder=null;
+            Toast.makeText(this,"Gagal memulai rekaman: "+e.getClass().getSimpleName(),Toast.LENGTH_LONG).show();
+        }
+    }
+
+    Schedule findScheduleById(int id){
+        for(Schedule s:schedules)if(s.id==id)return s;
+        return null;
     }
     void preview(Schedule s){
         try{
