@@ -71,7 +71,6 @@ public final class LicenseManager {
                 conn.setRequestProperty("Content-Type","application/json; charset=UTF-8");
                 conn.setRequestProperty("Accept","application/json");
                 conn.setRequestProperty("apikey",SUPABASE_PUBLISHABLE_KEY);
-                conn.setRequestProperty("Authorization","Bearer "+SUPABASE_PUBLISHABLE_KEY);
 
                 String json="{\"license_code\":\""+escape(normalized)+"\",\"device_id\":\""+escape(getDeviceId(app))+"\"}";
                 try(OutputStream os=conn.getOutputStream()){
