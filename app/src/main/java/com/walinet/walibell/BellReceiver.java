@@ -10,6 +10,10 @@ public class BellReceiver extends BroadcastReceiver {
     private static final String TAG = "WaliBellAlarm";
 
     @Override public void onReceive(Context c, Intent i){
+        if(!LicenseManager.isLicensed(c)){
+            cancelAll(c);
+            return;
+        }
         int raw=i.getIntExtra("raw",0);
         String uri=i.getStringExtra("uri");
         String alarmKey=i.getStringExtra("alarmKey");
@@ -148,7 +152,37 @@ public class BellReceiver extends BroadcastReceiver {
         return 1 << ((calendarDay + 5) % 7);
     }
 
+    public static void cancelAll(Context c){
+        try{
+            AlarmManager am=(AlarmManager)c.getSystemService(Context.ALARM_SERVICE);
+            if(am==null)return;
+            String data=c.getSharedPreferences("schedule",0).getString("data","");
+            if(data.isEmpty())return;
+            for(String line:data.split("\\n")){
+                try{
+                    String[] p=line.split("\\|",-1);
+                    if(p.length<6)continue;
+                    int id=Integer.parseInt(p[0]);
+                    for(int d=0;d<7;d++){
+                        Intent in=new Intent(c,BellReceiver.class);
+                        in.setAction("com.walinet.walibell.BELL_"+id+"_"+d);
+                        PendingIntent pi=PendingIntent.getBroadcast(c,id*10+d,in,PendingIntent.FLAG_NO_CREATE|PendingIntent.FLAG_IMMUTABLE);
+                        if(pi!=null){am.cancel(pi);pi.cancel();}
+                        Intent backup=new Intent(c,BellReceiver.class);
+                        backup.setAction("com.walinet.walibell.BELL_BACKUP_"+id+"_"+d);
+                        PendingIntent bp=PendingIntent.getBroadcast(c,id*10+d+200000,backup,PendingIntent.FLAG_NO_CREATE|PendingIntent.FLAG_IMMUTABLE);
+                        if(bp!=null){am.cancel(bp);bp.cancel();}
+                    }
+                }catch(Exception ignored){}
+            }
+        }catch(Exception ignored){}
+    }
+
     public static void rescheduleAll(Context c){
+        if(!LicenseManager.isLicensed(c)){
+            cancelAll(c);
+            return;
+        }
         AlarmManager am=(AlarmManager)c.getSystemService(Context.ALARM_SERVICE);
         if(am==null)return;
 
