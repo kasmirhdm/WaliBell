@@ -695,11 +695,18 @@ public class MainActivity extends ComponentActivity {
                     if(idx<todaySchedules.size()){
                         Schedule s=todaySchedules.get(idx);
                         LinearLayout item=new LinearLayout(this);item.setOrientation(LinearLayout.VERTICAL);item.setGravity(Gravity.CENTER_VERTICAL);
-                        item.setPadding(dp(7),dp(2),dp(7),dp(2));int scheduleBg; if(done) scheduleBg=darkMode()?Color.rgb(31,58,45):Color.rgb(235,248,240); else if(s==getNextSchedule()) scheduleBg=darkMode()?Color.rgb(67,58,25):Color.rgb(255,249,224); else scheduleBg=darkMode()?Color.rgb(62,36,40):Color.rgb(255,239,242); item.setBackground(bg(scheduleBg));item.setElevation(dp(1));
+                        item.setPadding(dp(7),dp(2),dp(7),dp(2));
+                        boolean done=isScheduleTimePassed(s.time);
+                        Schedule nextForColor=getNextSchedule();
+                        boolean isNext=nextForColor!=null&&s.time.equals(nextForColor.time)&&s.name.equals(nextForColor.name);
+                        int scheduleBg;
+                        if(done) scheduleBg=darkMode()?Color.rgb(31,58,45):Color.rgb(235,248,240);
+                        else if(isNext) scheduleBg=darkMode()?Color.rgb(67,58,25):Color.rgb(255,249,224);
+                        else scheduleBg=darkMode()?Color.rgb(62,36,40):Color.rgb(255,239,242);
+                        item.setBackground(bg(scheduleBg));item.setElevation(dp(1));
                         LinearLayout top=new LinearLayout(this);top.setGravity(Gravity.CENTER_VERTICAL);
                         TextView tm=tv(s.time,12);tm.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
                         top.addView(tm,new LinearLayout.LayoutParams(dp(39),dp(17)));
-                        boolean done=isScheduleTimePassed(s.time);
                         TextView stt=tv(done?"✓":"◷",10);stt.setTypeface(Typeface.DEFAULT,Typeface.BOLD);stt.setGravity(Gravity.CENTER);
                         stt.setTextColor(done?Color.rgb(22,163,74):Color.rgb(220,38,38));
                         top.addView(stt,new LinearLayout.LayoutParams(dp(18),dp(17)));
