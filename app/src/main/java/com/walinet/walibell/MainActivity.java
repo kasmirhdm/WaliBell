@@ -510,6 +510,56 @@ public class MainActivity extends ComponentActivity {
         }
     }
 
+    boolean requireLicense(){
+        if(LicenseManager.isLicensed(this)) return true;
+        showLicenseDialog();
+        return false;
+    }
+
+    void showLicenseDialog(){
+        final EditText code=new EditText(this);
+        code.setSingleLine(true);
+        code.setHint("Masukkan kode lisensi");
+        code.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS);
+        String saved=LicenseManager.getLicenseCode(this);
+        if(!saved.isEmpty())code.setText(saved);
+
+        AlertDialog dialog=new AlertDialog.Builder(this)
+            .setTitle("Aktifkan Lisensi WaliBell")
+            .setMessage("Masukkan kode lisensi untuk membuka jadwal, suara, perangkat, dan bel otomatis.")
+            .setView(code)
+            .setNegativeButton("Nanti",null)
+            .setPositiveButton("Aktifkan",null)
+            .create();
+
+        dialog.setOnShowListener(d->{
+            Button ok=dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+            ok.setOnClickListener(v->{
+                String value=code.getText().toString().trim();
+                if(value.isEmpty()){
+                    code.setError("Masukkan kode lisensi");
+                    return;
+                }
+                ok.setEnabled(false);
+                ok.setText("Memeriksa...");
+                LicenseManager.activate(this,value,(success,message,expiresAt)->{
+                    if(success){
+                        Toast.makeText(this,"Lisensi berhasil diaktifkan",Toast.LENGTH_LONG).show();
+                        dialog.dismiss();
+                        try{BellReceiver.rescheduleAll(this);}catch(Exception ignored){}
+                        startBellService();
+                        showPage(currentPage);
+                    }else{
+                        ok.setEnabled(true);
+                        ok.setText("Aktifkan");
+                        new AlertDialog.Builder(this).setTitle("Lisensi belum aktif").setMessage(message).setPositiveButton("OK",null).show();
+                    }
+                });
+            });
+        });
+        dialog.show();
+    }
+
     void showPage(int page){
         if(homeTicker!=null)homeHandler.removeCallbacks(homeTicker);
         currentPage=page;
