@@ -575,53 +575,53 @@ public class MainActivity extends ComponentActivity {
         TextView school=new TextView(this);school.setText(schoolName().toUpperCase(Locale.ROOT));school.setTextColor(Color.rgb(250,204,21));school.setTextSize(10);school.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
         heroText.addView(h1,new LinearLayout.LayoutParams(-1,dp(27)));heroText.addView(h2,new LinearLayout.LayoutParams(-1,dp(19)));heroText.addView(school,new LinearLayout.LayoutParams(-1,dp(17)));
         heroContent.addView(heroText,new LinearLayout.LayoutParams(0,-2,1));hero.addView(heroContent,new FrameLayout.LayoutParams(-1,-1,Gravity.CENTER));
-        page.addView(hero,new LinearLayout.LayoutParams(-1,dp(72)));
+        page.addView(hero,new LinearLayout.LayoutParams(-1,dp(92)));
 
         // ===== CLOCK & STATUS =====
         LinearLayout statusCard=card();
-        statusCard.setPadding(dp(10),dp(5),dp(10),dp(5));
+        statusCard.setPadding(dp(12),dp(7),dp(12),dp(7));
         statusCard.setElevation(dp(2));
         LinearLayout cols=new LinearLayout(this);cols.setOrientation(LinearLayout.HORIZONTAL);
 
         LinearLayout left=new LinearLayout(this);left.setOrientation(LinearLayout.VERTICAL);
-        TextView date=tv("",10);date.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-        TextView clock=tv("",24);clock.setTypeface(Typeface.DEFAULT,Typeface.BOLD);clock.setTextColor(Color.rgb(7,55,90));
-        left.addView(date,new LinearLayout.LayoutParams(-1,dp(18)));
-        left.addView(clock,new LinearLayout.LayoutParams(-1,dp(29)));
-        cols.addView(left,new LinearLayout.LayoutParams(0,dp(50),1.15f));
+        TextView date=tv("",11);date.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+        TextView clock=tv("",28);clock.setTypeface(Typeface.DEFAULT,Typeface.BOLD);clock.setTextColor(Color.rgb(7,55,90));
+        left.addView(date,new LinearLayout.LayoutParams(-1,dp(21)));
+        left.addView(clock,new LinearLayout.LayoutParams(-1,dp(34)));
+        cols.addView(left,new LinearLayout.LayoutParams(0,dp(62),1.15f));
 
         LinearLayout right=new LinearLayout(this);right.setOrientation(LinearLayout.VERTICAL);right.setPadding(dp(5),0,0,0);
         LinearLayout activeRow=new LinearLayout(this);activeRow.setGravity(Gravity.CENTER_VERTICAL);
-        TextView activeText=tv("",11);activeText.setTypeface(Typeface.DEFAULT,Typeface.BOLD);activeText.setTextColor(Color.rgb(22,101,52));
+        TextView activeText=tv("",12);activeText.setTypeface(Typeface.DEFAULT,Typeface.BOLD);activeText.setTextColor(Color.rgb(22,101,52));
         Switch bellSwitch=new Switch(this);bellSwitch.setChecked(getSharedPreferences("ui",0).getBoolean("bell_enabled",true));
         activeRow.addView(activeText,new LinearLayout.LayoutParams(0,dp(24),1));
         activeRow.addView(bellSwitch,new LinearLayout.LayoutParams(dp(48),dp(30)));
         right.addView(activeRow);
         LinearLayout btRow=new LinearLayout(this);btRow.setGravity(Gravity.CENTER_VERTICAL);
         TextView btIcon=tv("ᛒ",13);btIcon.setTextColor(Color.rgb(100,116,139));
-        TextView btText=tv("",9);btRow.addView(btIcon,new LinearLayout.LayoutParams(dp(18),dp(20)));btRow.addView(btText,new LinearLayout.LayoutParams(0,dp(20),1));
+        TextView btText=tv("",10);btRow.addView(btIcon,new LinearLayout.LayoutParams(dp(18),dp(20)));btRow.addView(btText,new LinearLayout.LayoutParams(0,dp(20),1));
         right.addView(btRow);
-        TextView activeStatus=tv("",9);activeStatus.setTypeface(Typeface.DEFAULT,Typeface.BOLD);activeStatus.setTextColor(Color.rgb(22,163,74));
+        TextView activeStatus=tv("",10);activeStatus.setTypeface(Typeface.DEFAULT,Typeface.BOLD);activeStatus.setTextColor(Color.rgb(22,163,74));
         right.addView(activeStatus,new LinearLayout.LayoutParams(-1,dp(17)));
-        cols.addView(right,new LinearLayout.LayoutParams(0,dp(50),1));
+        cols.addView(right,new LinearLayout.LayoutParams(0,dp(62),1));
         statusCard.addView(cols);
-        LinearLayout.LayoutParams scp=new LinearLayout.LayoutParams(-1,dp(60));scp.setMargins(0,dp(4),0,0);page.addView(statusCard,scp);
+        LinearLayout.LayoutParams scp=new LinearLayout.LayoutParams(-1,dp(78));scp.setMargins(0,dp(4),0,0);page.addView(statusCard,scp);
 
         // ===== NEXT SCHEDULE =====
         LinearLayout nextCard=new LinearLayout(this);nextCard.setOrientation(LinearLayout.HORIZONTAL);nextCard.setGravity(Gravity.CENTER_VERTICAL);
         nextCard.setPadding(dp(10),dp(3),dp(10),dp(3));nextCard.setBackground(bg(Color.rgb(224,242,254)));nextCard.setElevation(dp(1));
         ImageView alarmIcon=new ImageView(this);alarmIcon.setImageResource(R.drawable.ic_schedule);alarmIcon.setColorFilter(Color.rgb(220,38,38),android.graphics.PorterDuff.Mode.SRC_IN);
         nextCard.addView(alarmIcon,new LinearLayout.LayoutParams(dp(24),dp(24)));
-        TextView nextText=tv("",10);nextText.setTypeface(Typeface.DEFAULT,Typeface.BOLD);nextText.setTextColor(Color.rgb(15,55,80));
+        TextView nextText=tv("",11);nextText.setTypeface(Typeface.DEFAULT,Typeface.BOLD);nextText.setTextColor(Color.rgb(15,55,80));
         nextCard.addView(nextText,new LinearLayout.LayoutParams(0,dp(34),1));
-        LinearLayout.LayoutParams ncp=new LinearLayout.LayoutParams(-1,dp(40));ncp.setMargins(0,dp(4),0,0);page.addView(nextCard,ncp);
+        LinearLayout.LayoutParams ncp=new LinearLayout.LayoutParams(-1,dp(52));ncp.setMargins(0,dp(4),0,0);page.addView(nextCard,ncp);
 
         // ===== MANUAL BELL =====
         LinearLayout manualTitle=new LinearLayout(this);manualTitle.setGravity(Gravity.CENTER_VERTICAL);
         ImageView mi=new ImageView(this);mi.setImageResource(R.drawable.ic_bell);mi.setColorFilter(Color.rgb(7,55,90),android.graphics.PorterDuff.Mode.SRC_IN);
         manualTitle.addView(mi,new LinearLayout.LayoutParams(dp(19),dp(19)));
         TextView mt=tv("Bel Manual",14);mt.setTypeface(Typeface.DEFAULT,Typeface.BOLD);manualTitle.addView(mt,new LinearLayout.LayoutParams(-1,dp(22)));
-        LinearLayout.LayoutParams mtp=new LinearLayout.LayoutParams(-1,dp(22));mtp.setMargins(0,dp(4),0,0);page.addView(manualTitle,mtp);
+        LinearLayout.LayoutParams mtp=new LinearLayout.LayoutParams(-1,dp(28));mtp.setMargins(0,dp(4),0,0);page.addView(manualTitle,mtp);
 
         LinearLayout grid=new LinearLayout(this);grid.setOrientation(LinearLayout.VERTICAL);
         String[] manualNames={"BEL MASUK","PERGANTIAN","ISTIRAHAT","MASUK SETELAH ISTIRAHAT","BEL PULANG","BUNYIKAN SEKARANG"};
@@ -635,11 +635,11 @@ public class MainActivity extends ComponentActivity {
                 mb.setCompoundDrawablesWithIntrinsicBounds(manualIcons[index],0,0,0);mb.setCompoundDrawablePadding(dp(2));mb.setPadding(dp(1),0,dp(1),0);
                 mb.setBackground(bg(manualColors[index]));mb.setTextColor(index==5?Color.WHITE:Color.rgb(15,55,80));if(index==5)mb.setBackground(stadiumBg(Color.rgb(7,55,90)));
                 mb.setOnClickListener(v->{v.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);playManualBell(index);});
-                LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(0,dp(32),1);bp.setMargins(dp(2),dp(1),dp(2),dp(1));line.addView(mb,bp);
+                LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(0,dp(45),1);bp.setMargins(dp(2),dp(1),dp(2),dp(1));line.addView(mb,bp);
             }
             grid.addView(line,new LinearLayout.LayoutParams(-1,dp(35)));
         }
-        page.addView(grid);
+        page.addView(grid,new LinearLayout.LayoutParams(-1,dp(104)));
 
         // ===== TODAY SCHEDULE: 2 kolom agar enam jadwal tetap terlihat =====
         LinearLayout todayTitle=new LinearLayout(this);todayTitle.setGravity(Gravity.CENTER_VERTICAL);
@@ -697,20 +697,20 @@ public class MainActivity extends ComponentActivity {
                         LinearLayout item=new LinearLayout(this);item.setOrientation(LinearLayout.VERTICAL);item.setGravity(Gravity.CENTER_VERTICAL);
                         item.setPadding(dp(7),dp(2),dp(7),dp(2));item.setBackground(bg(darkMode()?Color.rgb(27,38,43):Color.rgb(248,250,249)));item.setElevation(dp(1));
                         LinearLayout top=new LinearLayout(this);top.setGravity(Gravity.CENTER_VERTICAL);
-                        TextView tm=tv(s.time,10);tm.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+                        TextView tm=tv(s.time,12);tm.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
                         top.addView(tm,new LinearLayout.LayoutParams(dp(39),dp(17)));
                         boolean done=isScheduleTimePassed(s.time);
-                        TextView stt=tv(done?"✓":"◷",9);stt.setTypeface(Typeface.DEFAULT,Typeface.BOLD);stt.setGravity(Gravity.CENTER);
+                        TextView stt=tv(done?"✓":"◷",10);stt.setTypeface(Typeface.DEFAULT,Typeface.BOLD);stt.setGravity(Gravity.CENTER);
                         stt.setTextColor(done?Color.rgb(22,163,74):Color.rgb(220,38,38));
                         top.addView(stt,new LinearLayout.LayoutParams(dp(18),dp(17)));
                         item.addView(top);
-                        TextView nm=tv(s.name,9);nm.setSingleLine(true);nm.setEllipsize(android.text.TextUtils.TruncateAt.END);item.addView(nm,new LinearLayout.LayoutParams(-1,dp(15)));
-                        LinearLayout.LayoutParams ip=new LinearLayout.LayoutParams(0,dp(34),1);ip.setMargins(dp(2),dp(1),dp(2),dp(1));line.addView(item,ip);
+                        TextView nm=tv(s.name,11);nm.setSingleLine(true);nm.setEllipsize(android.text.TextUtils.TruncateAt.END);item.addView(nm,new LinearLayout.LayoutParams(-1,dp(15)));
+                        LinearLayout.LayoutParams ip=new LinearLayout.LayoutParams(0,-1,1);ip.setMargins(dp(2),dp(1),dp(2),dp(1));line.addView(item,ip);
                     }else{
-                        Space empty=new Space(this);line.addView(empty,new LinearLayout.LayoutParams(0,dp(34),1));
+                        Space empty=new Space(this);line.addView(empty,new LinearLayout.LayoutParams(0,-1,1));
                     }
                 }
-                scheduleGrid.addView(line,new LinearLayout.LayoutParams(-1,dp(36)));
+                scheduleGrid.addView(line,new LinearLayout.LayoutParams(-1,0,1));
             }
         };
 
