@@ -54,6 +54,10 @@ public class BellService extends Service {
     }
 
     @Override public int onStartCommand(Intent intent,int flags,int startId){
+        if(!LicenseManager.isLicensed(this)){
+            stopSelf(startId);
+            return START_NOT_STICKY;
+        }
         saveStatus("last_command", "Perintah service diterima " + nowText());
         if(intent!=null&&(intent.hasExtra("raw")||intent.hasExtra("uri"))){
             int raw=intent.getIntExtra("raw",0);
