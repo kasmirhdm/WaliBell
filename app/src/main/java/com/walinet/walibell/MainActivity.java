@@ -101,13 +101,26 @@ public class MainActivity extends ComponentActivity {
             return;
         }
 
-        // Jangan membuka halaman pengaturan sistem secara otomatis saat aplikasi
-        // baru dibuka. Ini dapat membuat WaliBell terlihat seperti tertutup pada
-        // beberapa perangkat/vendor. Alarm dijadwalkan setelah UI berhasil tampil.
+        // Jadwalkan alarm segera setelah UI siap.
         try {
             new Handler(Looper.getMainLooper()).postDelayed(() -> {
                 try { BellReceiver.rescheduleAll(this); } catch (Throwable ignored) {}
             }, 300);
+        } catch (Throwable ignored) {}
+
+        // Pada Android/XOS, izin "penggunaan latar belakang" berbeda dengan
+        // pengecualian optimasi baterai dan Auto-start. Jika salah satunya belum
+        // aktif, alarm dapat bekerja saat aplikasi terbuka tetapi gagal saat
+        // proses aplikasi tidak aktif dan layar terkunci. Tawarkan panduan sekali
+        // agar pengguna dapat menyelesaikan perlindungan background.
+        try {
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                try {
+                    if (!schedules.isEmpty() && needsBackgroundProtection()) {
+                        showProtectionExplanation();
+                    }
+                } catch (Throwable ignored) {}
+            }, 1200);
         } catch (Throwable ignored) {}
         
         // Jalankan foreground service saat aplikasi masih terbuka. Dengan begitu
@@ -268,6 +281,20 @@ public class MainActivity extends ComponentActivity {
         }catch(Exception ignored){}
     }
 
+    boolean needsBackgroundProtection(){
+        boolean exactOk=true;
+        if(Build.VERSION.SDK_INT>=31){
+            AlarmManager am=(AlarmManager)getSystemService(ALARM_SERVICE);
+            exactOk=am!=null && am.canScheduleExactAlarms();
+        }
+        boolean batteryOk=true;
+        if(Build.VERSION.SDK_INT>=23){
+            android.os.PowerManager pm=(android.os.PowerManager)getSystemService(POWER_SERVICE);
+            batteryOk=pm==null || pm.isIgnoringBatteryOptimizations(getPackageName());
+        }
+        return !exactOk || !batteryOk || !getSharedPreferences("ui",0).getBoolean("autostart_prompt",false);
+    }
+
     void showProtectionExplanation(){
         if(protectionIntroShown)return;
         protectionIntroShown=true;
@@ -417,7 +444,7 @@ public class MainActivity extends ComponentActivity {
         if(getSharedPreferences("ui",0).getBoolean("autostart_prompt",false))return;
         getSharedPreferences("ui",0).edit().putBoolean("autostart_prompt",true).apply();
         new AlertDialog.Builder(this).setTitle("Aktifkan Autostart")
-            .setMessage("Pada Xiaomi, OPPO, vivo, realme dan beberapa HP lain, aktifkan Autostart/Izinkan berjalan otomatis untuk WaliBell agar sistem tidak menghentikan aplikasi di latar belakang.")
+            .setMessage("Pada Infinix/Tecno dan beberapa HP lain, aktifkan Autostart/Izinkan berjalan otomatis untuk WaliBell agar sistem tidak menghentikan aplikasi di latar belakang.")
             .setPositiveButton("Buka Pengaturan",(d,w)->openAutoStartSettings())
             .setNegativeButton("Nanti",null).show();
     }
@@ -434,6 +461,14 @@ public class MainActivity extends ComponentActivity {
                 in=new Intent("com.coloros.safecenter");in.setPackage("com.coloros.safecenter");
             }else if(m.contains("huawei")||m.contains("honor")){
                 in=new Intent("com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity");in.setPackage("com.huawei.systemmanager");
+            }else if(m.contains("infinix")||m.contains("tecno")||m.contains("itel")){
+                // XOS/HiOS/itel OS use Transsion's startup manager on many
+                // recent devices. If unavailable, fall back to app settings.
+                in=new Intent();
+                in.setComponent(new android.content.ComponentName(
+                    "com.transsion.security",
+                    "com.transsion.security.autostart.AutoStartActivity"
+                ));
             }
             if(in!=null){startActivity(in);return;}
         }catch(Exception ignored){}
