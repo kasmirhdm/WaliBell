@@ -813,25 +813,25 @@ public class MainActivity extends ComponentActivity {
     }
 
     void setupTimeInput(EditText time){
-        time.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
         time.setSingleLine(true);
-        time.addTextChangedListener(new android.text.TextWatcher(){
-            boolean changing=false;
-            @Override public void beforeTextChanged(CharSequence s,int start,int count,int after){}
-            @Override public void onTextChanged(CharSequence s,int start,int before,int count){}
-            @Override public void afterTextChanged(android.text.Editable e){
-                if(changing)return;
-                String digits=e.toString().replaceAll("[^0-9]","");
-                if(digits.length()>4)digits=digits.substring(0,4);
-                String formatted=digits.length()>2
-                    ?digits.substring(0,2)+":"+digits.substring(2)
-                    :digits;
-                if(!formatted.equals(e.toString())){
-                    changing=true;
-                    e.replace(0,e.length(),formatted);
-                    changing=false;
+        time.setFocusable(false);
+        time.setClickable(true);
+        time.setHint("Pilih waktu, misalnya 13:00");
+        time.setOnClickListener(v->{
+            int hour=7, minute=0;
+            String current=time.getText().toString().trim();
+            try{
+                String[] hm=current.split(":");
+                if(hm.length==2){
+                    hour=Integer.parseInt(hm[0]);
+                    minute=Integer.parseInt(hm[1]);
                 }
-            }
+            }catch(Exception ignored){}
+            TimePickerDialog picker=new TimePickerDialog(this,(view,h,m)->{
+                time.setText(String.format(Locale.getDefault(),"%02d:%02d",h,m));
+            },hour,minute,true);
+            picker.setTitle("Pilih waktu bel");
+            picker.show();
         });
     }
 
@@ -938,7 +938,7 @@ public class MainActivity extends ComponentActivity {
         LinearLayout box=card();box.setGravity(Gravity.CENTER);
         TextView n=tv("WaliBell",28);n.setTypeface(Typeface.create("sans-serif-medium",Typeface.BOLD));n.setGravity(Gravity.CENTER);n.setTextColor(themeColor());
         box.addView(n,new LinearLayout.LayoutParams(-1,dp(48)));
-        TextView v=tv("Versi 4.2\n\nSistem Bel Sekolah Otomatis\nProfesional, praktis, dan mudah dikelola\n\n"+schoolName()+"\n"+schoolLocation()+"\n\nPengelola Sistem\nKasmir, S.Pd\nOperator Sekolah",16);
+        TextView v=tv("Versi 4.3\n\nSistem Bel Sekolah Otomatis\nProfesional, praktis, dan mudah dikelola\n\n"+schoolName()+"\n"+schoolLocation()+"\n\nPengelola Sistem\nKasmir, S.Pd\nOperator Sekolah",16);
         v.setGravity(Gravity.CENTER);box.addView(v,new LinearLayout.LayoutParams(-1,dp(210)));
         LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-1,dp(300));bp.setMargins(dp(8),dp(8),dp(8),0);page.addView(box,bp);
 
@@ -1211,7 +1211,9 @@ public class MainActivity extends ComponentActivity {
         }
 
         try{
-            recordPath=new File(getExternalFilesDir(null),"walibell_"+System.currentTimeMillis()+".m4a").getAbsolutePath();
+            File recordingDir=new File(getFilesDir(),"recordings");
+            if(!recordingDir.exists()&&!recordingDir.mkdirs())throw new Exception("Folder rekaman tidak dapat dibuat");
+            recordPath=new File(recordingDir,"walibell_"+System.currentTimeMillis()+".m4a").getAbsolutePath();
 
             // Gunakan MediaRecorder tanpa Context agar kompatibel dengan seluruh
             // rentang minSdk WaliBell dan hindari masalah lifecycle pada Android baru.
@@ -1229,7 +1231,7 @@ public class MainActivity extends ComponentActivity {
             // tertutup oleh sentuhan/back sehingga onCancel() langsung memanggil
             // recorder.stop(), membuat rekaman terlihat seperti berhenti sendiri.
             final TextView status=new TextView(this);
-            status.setText("Sedang merekam...\\n\\n00:00");
+            status.setText("Sedang merekam...\n\n00:00");
             status.setTextSize(17);
             status.setTextColor(textColor());
             status.setPadding(dp(4),dp(4),dp(4),dp(4));
@@ -1242,7 +1244,7 @@ public class MainActivity extends ComponentActivity {
             ticker[0]=()->{
                 long sec=Math.max(0,(SystemClock.elapsedRealtime()-startedAt)/1000);
                 long min=sec/60, s=sec%60;
-                status.setText("Sedang merekam...\\n\\n"+String.format(Locale.getDefault(),"%02d:%02d",min,s));
+                status.setText("Sedang merekam...\n\n"+String.format(Locale.getDefault(),"%02d:%02d",min,s));
                 if(dialogRef[0]!=null&&dialogRef[0].isShowing())timerHandler.postDelayed(ticker[0],1000);
             };
 
@@ -1263,8 +1265,10 @@ public class MainActivity extends ComponentActivity {
                             recorder.release();
                         }
                         recorder=null;
-                        target.audioName=recordingName;
-                        target.audioUri=Uri.fromFile(new File(recordPath)).toString();
+                        File savedAudio=new File(recordPath);
+                        if(!savedAudio.exists()||savedAudio.length()==0)throw new Exception("File rekaman tidak ditemukan");
+                        target.audioName=recordingName+".m4a";
+                        target.audioUri=Uri.fromFile(savedAudio).toString();
                         target.rawId=0;
                         save();
                         BellReceiver.rescheduleAll(this);
