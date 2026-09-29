@@ -688,7 +688,7 @@ public class MainActivity extends ComponentActivity {
             Collections.sort(todaySchedules,(x,y)->x.time.compareTo(y.time));
             count.setText(todaySchedules.size()+" waktu");
 
-            for(int row=0;row<3;row++){
+            for(int row=0;row<(todaySchedules.size()+1)/2;row++){
                 LinearLayout line=new LinearLayout(this);line.setOrientation(LinearLayout.HORIZONTAL);
                 for(int col=0;col<2;col++){
                     int idx=row*2+col;
