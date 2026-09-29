@@ -517,17 +517,61 @@ public class MainActivity extends ComponentActivity {
     }
 
     void showLicenseDialog(){
+        final int dp=(int)(getResources().getDisplayMetrics().density+0.5f);
+
+        android.widget.LinearLayout box=new android.widget.LinearLayout(this);
+        box.setOrientation(android.widget.LinearLayout.VERTICAL);
+        box.setPadding(24*dp,4*dp,24*dp,0);
+
+        android.widget.TextView info=new android.widget.TextView(this);
+        info.setText("Masukkan kode lisensi untuk membuka seluruh fitur WaliBell.");
+        info.setTextSize(15);
+        info.setTextColor(android.graphics.Color.DKGRAY);
+        info.setPadding(0,0,0,12*dp);
+        box.addView(info);
+
         final EditText code=new EditText(this);
         code.setSingleLine(true);
-        code.setHint("Masukkan kode lisensi");
+        code.setHint("Contoh: WB-2026-XXXX");
         code.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS);
+        code.setPadding(0,4*dp,0,4*dp);
         String saved=LicenseManager.getLicenseCode(this);
         if(!saved.isEmpty())code.setText(saved);
+        box.addView(code,new android.widget.LinearLayout.LayoutParams(-1,android.widget.LinearLayout.LayoutParams.WRAP_CONTENT));
+
+        android.widget.TextView help=new android.widget.TextView(this);
+        help.setText("Belum memiliki kode lisensi?");
+        help.setTextSize(14);
+        help.setTextColor(android.graphics.Color.DKGRAY);
+        help.setPadding(0,18*dp,0,4*dp);
+        box.addView(help);
+
+        android.widget.Button wa=new android.widget.Button(this);
+        wa.setText("Hubungi WhatsApp 0812-1306-8392");
+        wa.setAllCaps(false);
+        wa.setOnClickListener(v->{
+            try{
+                android.content.Intent intent=new android.content.Intent(
+                    android.content.Intent.ACTION_VIEW,
+                    android.net.Uri.parse("https://wa.me/6281213068392?text=Halo%20Kak%2C%20saya%20ingin%20mendapatkan%20kode%20lisensi%20WaliBell.")
+                );
+                startActivity(intent);
+            }catch(Exception e){
+                android.widget.Toast.makeText(this,"WhatsApp tidak tersedia di perangkat ini.",android.widget.Toast.LENGTH_LONG).show();
+            }
+        });
+        box.addView(wa,new android.widget.LinearLayout.LayoutParams(-1,android.widget.LinearLayout.LayoutParams.WRAP_CONTENT));
+
+        android.widget.TextView note=new android.widget.TextView(this);
+        note.setText("1 lisensi berlaku untuk 1 perangkat.");
+        note.setTextSize(12);
+        note.setTextColor(android.graphics.Color.GRAY);
+        note.setPadding(0,4*dp,0,0);
+        box.addView(note);
 
         AlertDialog dialog=new AlertDialog.Builder(this)
-            .setTitle("Aktifkan Lisensi WaliBell")
-            .setMessage("Masukkan kode lisensi untuk membuka jadwal, suara, perangkat, dan bel otomatis.")
-            .setView(code)
+            .setTitle("Aktivasi WaliBell")
+            .setView(box)
             .setNegativeButton("Nanti",null)
             .setPositiveButton("Aktifkan",null)
             .create();
