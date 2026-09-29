@@ -938,7 +938,7 @@ public class MainActivity extends ComponentActivity {
         LinearLayout box=card();box.setGravity(Gravity.CENTER);
         TextView n=tv("WaliBell",28);n.setTypeface(Typeface.create("sans-serif-medium",Typeface.BOLD));n.setGravity(Gravity.CENTER);n.setTextColor(themeColor());
         box.addView(n,new LinearLayout.LayoutParams(-1,dp(48)));
-        TextView v=tv("Versi 4.3\n\nSistem Bel Sekolah Otomatis\nProfesional, praktis, dan mudah dikelola\n\n"+schoolName()+"\n"+schoolLocation()+"\n\nPengelola Sistem\nKasmir, S.Pd\nOperator Sekolah",16);
+        TextView v=tv("Versi 4.4\n\nSistem Bel Sekolah Otomatis\nProfesional, praktis, dan mudah dikelola\n\n"+schoolName()+"\n"+schoolLocation()+"\n\nPengelola Sistem\nKasmir, S.Pd\nOperator Sekolah",16);
         v.setGravity(Gravity.CENTER);box.addView(v,new LinearLayout.LayoutParams(-1,dp(210)));
         LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(-1,dp(300));bp.setMargins(dp(8),dp(8),dp(8),0);page.addView(box,bp);
 
@@ -1302,11 +1302,53 @@ public class MainActivity extends ComponentActivity {
         return null;
     }
     void preview(Schedule s){
+        MediaPlayer p=null;
         try{
-            if(s.rawId==0&&(s.audioUri==null||s.audioUri.isEmpty())){int builtIn=builtInRawForName(s.name);if(builtIn!=0){s.rawId=builtIn;s.audioName=s.name+".wav";save();BellReceiver.rescheduleAll(this);}else{Toast.makeText(this,"Belum ada suara. Silakan pilih atau rekam suara.",Toast.LENGTH_SHORT).show();return;}}
-            MediaPlayer p=s.rawId!=0?MediaPlayer.create(this,s.rawId):MediaPlayer.create(this,Uri.parse(s.audioUri));
-            if(p==null){Toast.makeText(this,"Audio tidak dapat diputar",Toast.LENGTH_SHORT).show();return;}p.setOnCompletionListener(MediaPlayer::release);p.start();
-        }catch(Exception e){Toast.makeText(this,"Audio tidak dapat diputar",Toast.LENGTH_SHORT).show();}
+            if(s.rawId==0&&(s.audioUri==null||s.audioUri.isEmpty())){
+                int builtIn=builtInRawForName(s.name);
+                if(builtIn!=0){
+                    s.rawId=builtIn;
+                    s.audioName=s.name+".wav";
+                    save();
+                    BellReceiver.rescheduleAll(this);
+                }else{
+                    Toast.makeText(this,"Belum ada suara. Silakan pilih atau rekam suara.",Toast.LENGTH_SHORT).show();
+                    return;
+                }
+            }
+
+            if(s.rawId!=0){
+                p=MediaPlayer.create(this,s.rawId);
+            }else if(s.audioUri!=null&&!s.audioUri.isEmpty()){
+                Uri uri=Uri.parse(s.audioUri);
+                if("file".equalsIgnoreCase(uri.getScheme())){
+                    // Rekaman WaliBell berada di penyimpanan internal aplikasi.
+                    // Gunakan path langsung agar MediaPlayer dapat membaca file
+                    // internal dengan andal pada Android 10+.
+                    File audioFile=new File(uri.getPath());
+                    if(!audioFile.exists()||audioFile.length()==0)
+                        throw new Exception("File audio tidak ditemukan");
+                    p=new MediaPlayer();
+                    p.setDataSource(audioFile.getAbsolutePath());
+                    p.prepare();
+                }else{
+                    p=MediaPlayer.create(this,uri);
+                }
+            }
+
+            if(p==null)throw new Exception("MediaPlayer gagal dibuat");
+            final MediaPlayer player=p;
+            player.setOnCompletionListener(MediaPlayer::release);
+            player.setOnErrorListener((mp,what,extra)->{
+                try{mp.release();}catch(Exception ignored){}
+                Toast.makeText(this,"Format atau file audio tidak dapat diputar.",Toast.LENGTH_LONG).show();
+                return true;
+            });
+            player.start();
+        }catch(Exception e){
+            if(p!=null){try{p.release();}catch(Exception ignored){}}
+            Toast.makeText(this,"Audio tidak dapat diputar: "+e.getClass().getSimpleName(),Toast.LENGTH_LONG).show();
+        }
     }
     @Override protected void onActivityResult(int r,int c,Intent d){
         super.onActivityResult(r,c,d);
