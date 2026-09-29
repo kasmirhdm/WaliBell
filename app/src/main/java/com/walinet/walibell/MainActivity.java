@@ -81,7 +81,7 @@ public class MainActivity extends ComponentActivity {
                     if(am!=null && am.canScheduleExactAlarms()){
                         waitingForExactAlarmSettings=false;
                         BellReceiver.clearExactAlarmPermissionNotification(this);
-                        BellReceiver.rescheduleAll(this);
+                        if(LicenseManager.isLicensed(this)) BellReceiver.rescheduleAll(this); else BellReceiver.cancelAll(this);
                         requestBatteryOptimizationPermission();
                     }else{
                         waitingForExactAlarmSettings=false;
@@ -104,7 +104,7 @@ public class MainActivity extends ComponentActivity {
         // Jadwalkan alarm segera setelah UI siap.
         try {
             new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                try { BellReceiver.rescheduleAll(this); } catch (Throwable ignored) {}
+                try { if(LicenseManager.isLicensed(this)) BellReceiver.rescheduleAll(this); else BellReceiver.cancelAll(this); } catch (Throwable ignored) {}
             }, 300);
         } catch (Throwable ignored) {}
 
@@ -128,7 +128,7 @@ public class MainActivity extends ComponentActivity {
         // perangkat/vendor yang ketat terhadap background-start, alarm tetap dapat
         // meneruskan perintah audio ke service yang sudah hidup.
         try {
-            new Handler(Looper.getMainLooper()).postDelayed(() -> startBellService(), 500);
+            new Handler(Looper.getMainLooper()).postDelayed(() -> { if(LicenseManager.isLicensed(this)) startBellService(); }, 500);
         } catch (Throwable ignored) {}
     }
 
@@ -496,7 +496,7 @@ public class MainActivity extends ComponentActivity {
 
     @Override protected void onResume(){
         super.onResume();
-        try{BellReceiver.rescheduleAll(this);}catch(Exception ignored){}
+        try{if(LicenseManager.isLicensed(this)) BellReceiver.rescheduleAll(this); else BellReceiver.cancelAll(this);}catch(Exception ignored){}
 
         // Returning from Android Settings continues the permission sequence.
         if(protectionFlowStarted){
@@ -723,7 +723,7 @@ public class MainActivity extends ComponentActivity {
 
         bellSwitch.setOnCheckedChangeListener((buttonView,isChecked)->{
             getSharedPreferences("ui",0).edit().putBoolean("bell_enabled",isChecked).apply();
-            BellReceiver.rescheduleAll(this);
+            if(LicenseManager.isLicensed(this)) BellReceiver.rescheduleAll(this); else BellReceiver.cancelAll(this);
             activeText.setText(isChecked?"Bel Aktif":"Bel Nonaktif");
             activeStatus.setText(isChecked?"✓ Sistem berjalan":"Bel otomatis tidak aktif");
         });
@@ -832,7 +832,7 @@ public class MainActivity extends ComponentActivity {
             if(!t.matches("([01]\\d|2[0-3]):[0-5]\\d")){Toast.makeText(this,"Format waktu harus HH:mm, contoh 13:00",Toast.LENGTH_LONG).show();return;}
             int id=0;for(Schedule s:schedules)id=Math.max(id,s.id+1);
             schedules.add(new Schedule(id,t,n,"Belum ada suara",null,0,getDaysMask(dayChecks)));
-            save();BellReceiver.rescheduleAll(this);showPage(1);
+            save();if(LicenseManager.isLicensed(this)) BellReceiver.rescheduleAll(this); else BellReceiver.cancelAll(this);showPage(1);
         }).setNegativeButton("Batal",null).show();
     }
 
@@ -1064,7 +1064,7 @@ public class MainActivity extends ComponentActivity {
             if(scheduleText==null)throw new Exception("File jadwal tidak ditemukan");
             ArrayList<Schedule> restored=new ArrayList<>();
             for(String line:scheduleText.split("\\n")){String[] p=line.split("\\|",-1);if(p.length<7)continue;String au=p[4];File af=audioFiles.get(au);String uri2=af!=null?Uri.fromFile(af).toString():null;restored.add(new Schedule(Integer.parseInt(p[0]),p[1],p[2],p[3],uri2,Integer.parseInt(p[5]),Integer.parseInt(p[6])));}
-            schedules=restored;save();BellReceiver.rescheduleAll(this);showPage(PAGE_SCHEDULE);Toast.makeText(this,"Restore berhasil.",Toast.LENGTH_LONG).show();
+            schedules=restored;save();if(LicenseManager.isLicensed(this)) BellReceiver.rescheduleAll(this); else BellReceiver.cancelAll(this);showPage(PAGE_SCHEDULE);Toast.makeText(this,"Restore berhasil.",Toast.LENGTH_LONG).show();
         }catch(Exception e){Toast.makeText(this,"Restore gagal: "+e.getMessage(),Toast.LENGTH_LONG).show();}
     }
 
@@ -1150,14 +1150,14 @@ public class MainActivity extends ComponentActivity {
             String n=name.getText().toString().trim(),t=time.getText().toString().trim();
             if(n.isEmpty())n="Jadwal Baru";
             if(!t.matches("([01]\\d|2[0-3]):[0-5]\\d")){Toast.makeText(this,"Format waktu harus HH:mm, contoh 13:00",Toast.LENGTH_LONG).show();return;}
-            target.name=n;target.time=t;target.daysMask=getDaysMask(dayChecks);save();BellReceiver.rescheduleAll(this);showPage(1);
+            target.name=n;target.time=t;target.daysMask=getDaysMask(dayChecks);save();if(LicenseManager.isLicensed(this)) BellReceiver.rescheduleAll(this); else BellReceiver.cancelAll(this);showPage(1);
         }).setNegativeButton("Batal",null).show();
     }
 
     void deleteSchedule(int id){
         Schedule found=null;for(Schedule s:schedules)if(s.id==id){found=s;break;}if(found==null)return;final Schedule target=found;
         new AlertDialog.Builder(this).setTitle("Hapus Jadwal").setMessage("Hapus jadwal \"" + target.name + "\"?").setPositiveButton("Hapus",(d,w)->{
-            schedules.remove(target);save();BellReceiver.rescheduleAll(this);showPage(1);
+            schedules.remove(target);save();if(LicenseManager.isLicensed(this)) BellReceiver.rescheduleAll(this); else BellReceiver.cancelAll(this);showPage(1);
         }).setNegativeButton("Batal",null).show();
     }
 
@@ -1177,7 +1177,7 @@ public class MainActivity extends ComponentActivity {
         Schedule selected=null;for(Schedule x:schedules)if(x.id==id){selected=x;break;}if(selected==null)return;
         new AlertDialog.Builder(this).setTitle("Suara untuk "+selected.name)
         .setItems(new String[]{"Pilih file audio dari HP","Rekam suara sendiri","Hapus suara"},(d,w)->{
-            if(w==0)pick();else if(w==1)record();else{Schedule s=null;for(Schedule x:schedules)if(x.id==editingId){s=x;break;}if(s==null)return;s.audioName="Belum ada suara";s.audioUri=null;s.rawId=0;save();showPage(currentPage);BellReceiver.rescheduleAll(this);}
+            if(w==0)pick();else if(w==1)record();else{Schedule s=null;for(Schedule x:schedules)if(x.id==editingId){s=x;break;}if(s==null)return;s.audioName="Belum ada suara";s.audioUri=null;s.rawId=0;save();showPage(currentPage);if(LicenseManager.isLicensed(this)) BellReceiver.rescheduleAll(this); else BellReceiver.cancelAll(this);}
         }).show();
     }
 
@@ -1259,7 +1259,7 @@ public class MainActivity extends ComponentActivity {
                         target.audioUri=Uri.fromFile(savedAudio).toString();
                         target.rawId=0;
                         save();
-                        BellReceiver.rescheduleAll(this);
+                        if(LicenseManager.isLicensed(this)) BellReceiver.rescheduleAll(this); else BellReceiver.cancelAll(this);
                         showPage(currentPage);
                         Toast.makeText(this,"Rekaman berhasil disimpan.",Toast.LENGTH_SHORT).show();
                     }catch(Exception e){
@@ -1298,7 +1298,7 @@ public class MainActivity extends ComponentActivity {
                     s.rawId=builtIn;
                     s.audioName=s.name+".wav";
                     save();
-                    BellReceiver.rescheduleAll(this);
+                    if(LicenseManager.isLicensed(this)) BellReceiver.rescheduleAll(this); else BellReceiver.cancelAll(this);
                 }else{
                     Toast.makeText(this,"Belum ada suara. Silakan pilih atau rekam suara.",Toast.LENGTH_SHORT).show();
                     return;
@@ -1342,7 +1342,7 @@ public class MainActivity extends ComponentActivity {
         super.onActivityResult(r,c,d);
         if(r==BACKUP_CREATE&&c==RESULT_OK&&d!=null&&d.getData()!=null){backupToUri(d.getData());return;}
         if(r==RESTORE_OPEN&&c==RESULT_OK&&d!=null&&d.getData()!=null){restoreFromUri(d.getData());return;}
-        if(r==PICK_AUDIO&&c==RESULT_OK&&d!=null&&d.getData()!=null){Uri u=d.getData();try{getContentResolver().takePersistableUriPermission(u,Intent.FLAG_GRANT_READ_URI_PERMISSION);}catch(Exception ignored){}Schedule s=null;for(Schedule x:schedules)if(x.id==editingId){s=x;break;}if(s==null)return;s.audioName=getAudioDisplayName(u);s.audioUri=u.toString();s.rawId=0;save();showPage(currentPage);BellReceiver.rescheduleAll(this);}
+        if(r==PICK_AUDIO&&c==RESULT_OK&&d!=null&&d.getData()!=null){Uri u=d.getData();try{getContentResolver().takePersistableUriPermission(u,Intent.FLAG_GRANT_READ_URI_PERMISSION);}catch(Exception ignored){}Schedule s=null;for(Schedule x:schedules)if(x.id==editingId){s=x;break;}if(s==null)return;s.audioName=getAudioDisplayName(u);s.audioUri=u.toString();s.rawId=0;save();showPage(currentPage);if(LicenseManager.isLicensed(this)) BellReceiver.rescheduleAll(this); else BellReceiver.cancelAll(this);}
     }
     String getAudioDisplayName(Uri uri){
         try{
