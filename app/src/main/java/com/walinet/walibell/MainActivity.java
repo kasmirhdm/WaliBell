@@ -910,8 +910,9 @@ public class MainActivity extends ComponentActivity {
     }
 
     void showAboutPage(){
-        clearContent();content.addView(header("Tentang","Informasi aplikasi"),new LinearLayout.LayoutParams(-1,dp(78)));
+        clearContent();
         LinearLayout page=new LinearLayout(this);page.setOrientation(LinearLayout.VERTICAL);page.setPadding(0,0,0,dp(56));
+        page.addView(header("Tentang","Informasi aplikasi"),new LinearLayout.LayoutParams(-1,dp(78)));
 
         // Identitas aplikasi dibuat ringkas agar proporsional, sementara seluruh
         // informasi dan alat tetap mudah dibaca dalam halaman yang dapat di-scroll.
