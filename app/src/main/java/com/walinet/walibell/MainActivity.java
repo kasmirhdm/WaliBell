@@ -567,7 +567,7 @@ public class MainActivity extends ComponentActivity {
         right.setPadding(dp(10),0,0,0);
         LinearLayout activeRow=new LinearLayout(this);
         activeRow.setGravity(Gravity.CENTER_VERTICAL);
-        TextView activeText=tv("Bel Aktif",15);
+        TextView activeText=tv("",15);
         activeText.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
         activeText.setTextColor(Color.rgb(22,101,52));
         Switch bellSwitch=new Switch(this);
@@ -690,13 +690,21 @@ public class MainActivity extends ComponentActivity {
             clock.setText(new SimpleDateFormat("HH:mm:ss",Locale.getDefault()).format(now.getTime()));
 
             Schedule next=getNextSchedule();
-            nextText.setText(next==null?"Berikutnya: Tidak ada jadwal":("Berikutnya: "+next.name+"  •  "+next.time));
+            if(next==null){
+                nextText.setText("Berikutnya: Tidak ada jadwal");
+            }else{
+                Calendar target=nextOccurrence(next);
+                long diff=Math.max(0,target.getTimeInMillis()-now.getTimeInMillis())/60000;
+                String remain=diff<1?"kurang dari 1 menit":(diff+" menit lagi");
+                nextText.setText("Berikutnya: "+next.name+"  •  "+next.time+"\n"+remain);
+            }
 
             boolean connected=isBluetoothConnected();
             btText.setText(connected?"Bluetooth terhubung":"Bluetooth belum terhubung");
             btText.setTextColor(connected?Color.rgb(22,163,74):Color.rgb(100,116,139));
             btIcon.setTextColor(connected?Color.rgb(22,163,74):Color.rgb(100,116,139));
-            activeStatus.setText(bellSwitch.isChecked()?"✓ Bel Aktif":"Bel Nonaktif");
+            activeText.setText(bellSwitch.isChecked()?"Bel Aktif":"Bel Nonaktif");
+            activeStatus.setText(bellSwitch.isChecked()?"✓ Sistem berjalan":"Bel otomatis tidak aktif");
             activeStatus.setTextColor(bellSwitch.isChecked()?Color.rgb(22,163,74):Color.rgb(148,163,184));
 
             scheduleList.removeAllViews();
@@ -717,7 +725,7 @@ public class MainActivity extends ComponentActivity {
                 TextView nm=tv(s.name,14);
                 item.addView(nm,new LinearLayout.LayoutParams(0,dp(48),1));
                 boolean done=isScheduleTimePassed(s.time);
-                TextView stt=tv(done?"✓ Selesai":"◷",13);
+                TextView stt=tv(done?"✓ Selesai":"◷ Menunggu",12);
                 stt.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
                 stt.setGravity(Gravity.CENTER);
                 stt.setTextColor(done?Color.rgb(22,163,74):Color.rgb(220,38,38));
@@ -737,7 +745,8 @@ public class MainActivity extends ComponentActivity {
             getSharedPreferences("ui",0).edit().putBoolean("bell_enabled",isChecked).apply();
             if(isChecked)BellReceiver.rescheduleAll(this);
             else BellReceiver.rescheduleAll(this);
-            activeStatus.setText(isChecked?"✓ Bel Aktif":"Bel Nonaktif");
+            activeText.setText(isChecked?"Bel Aktif":"Bel Nonaktif");
+            activeStatus.setText(isChecked?"✓ Sistem berjalan":"Bel otomatis tidak aktif");
         });
         homeTicker=()->{
             if(currentPage==PAGE_HOME){
@@ -858,7 +867,7 @@ public class MainActivity extends ComponentActivity {
             LinearLayout row=card();row.setOrientation(LinearLayout.HORIZONTAL);row.setGravity(Gravity.CENTER_VERTICAL);
             TextView name=tv("♫  "+s.name+"\n     "+s.audioName,14);row.addView(name,new LinearLayout.LayoutParams(0,dp(58),1));
             Button play=iconButton("",R.drawable.ic_play);play.setOnClickListener(v->preview(s));row.addView(play,new LinearLayout.LayoutParams(dp(50),dp(42)));
-            Button b=actionButton("Suara");b.setOnClickListener(v->chooseAudio(s.id));row.addView(b,new LinearLayout.LayoutParams(dp(70),dp(42)));
+            Button b=actionButton("Pilih");b.setOnClickListener(v->chooseAudio(s.id));row.addView(b,new LinearLayout.LayoutParams(dp(70),dp(42)));
             LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(-1,dp(70));rp.setMargins(dp(8),dp(4),dp(8),0);box.addView(row,rp);
         }
         Button add=iconButton("Tambah Suara Baru",R.drawable.ic_add);add.setTextColor(Color.WHITE);add.setBackground(stadiumBg(Color.rgb(13,148,136)));add.setOnClickListener(v->{if(!schedules.isEmpty())chooseAudio(schedules.get(0).id);});
@@ -933,7 +942,7 @@ public class MainActivity extends ComponentActivity {
 
     void showAboutPage(){
         clearContent();content.addView(header("Tentang","Informasi aplikasi"),new LinearLayout.LayoutParams(-1,dp(78)));
-        LinearLayout page=new LinearLayout(this);page.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout page=new LinearLayout(this);page.setOrientation(LinearLayout.VERTICAL);page.setPadding(0,0,0,dp(56));
 
         LinearLayout box=card();box.setGravity(Gravity.CENTER);
         TextView n=tv("WaliBell",28);n.setTypeface(Typeface.create("sans-serif-medium",Typeface.BOLD));n.setGravity(Gravity.CENTER);n.setTextColor(themeColor());
@@ -970,7 +979,7 @@ public class MainActivity extends ComponentActivity {
         Button alarmBtn=toolInfoButton("Cek Alarm & Pengingat","Pastikan izin alarm agar bel otomatis bekerja tepat waktu.",()->showExactAlarmStatus());
         tools.addView(alarmBtn,new LinearLayout.LayoutParams(-1,dp(64)));
 
-        LinearLayout.LayoutParams tp=new LinearLayout.LayoutParams(-1,dp(480));tp.setMargins(dp(8),dp(8),dp(8),dp(8));page.addView(tools,tp);
+        LinearLayout.LayoutParams tp=new LinearLayout.LayoutParams(-1,-2);tp.setMargins(dp(8),dp(8),dp(8),dp(8));page.addView(tools,tp);
 
         TextView tip=tv("Setiap menu di atas memiliki penjelasan singkat agar operator sekolah mudah memahami fungsi dan pengaturannya.",13);
         tip.setPadding(dp(12),dp(8),dp(12),dp(12));page.addView(tip,new LinearLayout.LayoutParams(-1,dp(54)));
@@ -1093,7 +1102,7 @@ public class MainActivity extends ComponentActivity {
             row.addView(inf,new LinearLayout.LayoutParams(0,dp(82),1));
             LinearLayout actions=new LinearLayout(this);actions.setOrientation(LinearLayout.VERTICAL);
             LinearLayout r1=new LinearLayout(this);Button play=actionButton("▶");play.setOnClickListener(v->preview(s));r1.addView(play,new LinearLayout.LayoutParams(dp(54),dp(34)));
-            Button sound=actionButton("Suara");sound.setOnClickListener(v->chooseAudio(s.id));r1.addView(sound,new LinearLayout.LayoutParams(dp(66),dp(34)));actions.addView(r1);
+            Button sound=actionButton("Pilih");sound.setOnClickListener(v->chooseAudio(s.id));r1.addView(sound,new LinearLayout.LayoutParams(dp(66),dp(34)));actions.addView(r1);
             LinearLayout r2=new LinearLayout(this);Button edit=actionButton("Edit");edit.setOnClickListener(v->editSchedule(s.id));r2.addView(edit,new LinearLayout.LayoutParams(dp(60),dp(34)));
             Button del=actionButton("Hapus");del.setOnClickListener(v->deleteSchedule(s.id));r2.addView(del,new LinearLayout.LayoutParams(dp(60),dp(34)));actions.addView(r2);
             row.addView(actions,new LinearLayout.LayoutParams(dp(126),dp(72)));
