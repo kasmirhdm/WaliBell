@@ -532,7 +532,7 @@ public class MainActivity extends ComponentActivity {
 
         final EditText code=new EditText(this);
         code.setSingleLine(true);
-        code.setHint("Contoh: WB-2026-XXXX");
+        code.setHint("Masukkan kode lisensi");
         code.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS);
         code.setPadding(0,4*dp,0,4*dp);
         String saved=LicenseManager.getLicenseCode(this);
