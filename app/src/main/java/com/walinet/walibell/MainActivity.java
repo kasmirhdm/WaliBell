@@ -44,7 +44,7 @@ public class MainActivity extends ComponentActivity {
     Runnable homeTicker;
     boolean kioskMode=false;
     ArrayList<Schedule> schedules=new ArrayList<>();
-    int editingId=-1,currentPage=1;
+    int editingId=-1,currentPage=1,pendingLicensePage=-1;
     MediaRecorder recorder;
     String recordPath;
 
@@ -548,7 +548,7 @@ public class MainActivity extends ComponentActivity {
                         dialog.dismiss();
                         try{BellReceiver.rescheduleAll(this);}catch(Exception ignored){}
                         startBellService();
-                        showPage(currentPage);
+                        int target=pendingLicensePage>=0?pendingLicensePage:PAGE_HOME;\n                        pendingLicensePage=-1;\n                        showPage(target);
                     }else{
                         ok.setEnabled(true);
                         ok.setText("Aktifkan");
@@ -562,7 +562,7 @@ public class MainActivity extends ComponentActivity {
 
     void showPage(int page){
         if(page==PAGE_SCHEDULE||page==PAGE_SOUND||page==PAGE_DEVICE){
-            if(!requireLicense())return;
+            if(!LicenseManager.isLicensed(this)){ pendingLicensePage=page; showLicenseDialog(); return; }
         }
         if(homeTicker!=null)homeHandler.removeCallbacks(homeTicker);
         currentPage=page;
