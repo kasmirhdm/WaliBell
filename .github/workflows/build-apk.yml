@@ -20,6 +20,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Package project source
+        run: |
+          mkdir -p project-backup
+          zip -r project-backup/WaliBell_V4.4-Project.zip . -x "./.git/*" "./project-backup/*"
+      
+      - name: Upload project source
+        uses: actions/upload-artifact@v4
+        with:
+          name: WaliBell-V4.4-Project-Source
+          path: project-backup/WaliBell_V4.4-Project.zip
+          if-no-files-found: error
+
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
