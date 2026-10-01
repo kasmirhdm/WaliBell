@@ -14,21 +14,17 @@ public class BellReceiver extends BroadcastReceiver {
             cancelAll(c);
             return;
         }
+
         int raw=i.getIntExtra("raw",0);
         String uri=i.getStringExtra("uri");
         String alarmKey=i.getStringExtra("alarmKey");
+        int alarmId=i.getIntExtra("alarmId",-1);
 
-        // The exact alarm is delivered to this BroadcastReceiver first.
-        // This is the standard AlarmManager path: the receiver is awakened
-        // by the system, then starts the foreground service. Android explicitly
-        // allows an exact alarm to start a foreground service in the background.
         saveStatus(c,"alarm_broadcast_received",
             "Alarm broadcast diterima " + nowText() + " • " +
             (i.getStringExtra("name")==null?"Bel":i.getStringExtra("name")) +
             " " + (i.getStringExtra("time")==null?"":i.getStringExtra("time")));
 
-        // BellService owns de-duplication and audio playback. Keeping the
-        // de-duplication in one place avoids rejecting the same alarm twice.
         try{
             Intent service=new Intent(c,BellService.class);
             service.putExtra("raw",raw);
@@ -44,13 +40,16 @@ public class BellReceiver extends BroadcastReceiver {
             Log.e(TAG,"Gagal memulai BellService dari exact alarm",e);
         }
 
-        // Keep the recurring school-bell schedule alive by calculating
-        // the next one-shot alarm after this delivery.
+        // Penting: setelah satu jadwal berbunyi, jangan membatalkan dan
+        // mendaftarkan ulang jadwal milik jadwal lain. Cukup jadwalkan
+        // occurrence berikutnya untuk ID jadwal yang baru saja berbunyi.
         try{
-            rescheduleAll(c);
+            if(alarmId>=0) rescheduleOne(c,alarmId);
+            else rescheduleAll(c); // kompatibilitas dengan alarm lama.
         }catch(Exception e){
             saveStatus(c,"last_error",
                 "Gagal menjadwalkan alarm berikutnya: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+            Log.e(TAG,"Gagal menjadwalkan alarm berikutnya",e);
         }
     }
 
@@ -178,6 +177,196 @@ public class BellReceiver extends BroadcastReceiver {
         }catch(Exception ignored){}
     }
 
+    static String actionFor(int id,int dayIndex){
+        return "com.walinet.walibell.BELL_"+id+"_"+dayIndex;
+    }
+
+    static String backupActionFor(int id,int dayIndex){
+        return "com.walinet.walibell.BELL_BACKUP_"+id+"_"+dayIndex;
+    }
+
+    static void cancelScheduleAlarms(Context c, AlarmManager am, int id){
+        for(int d=0;d<7;d++){
+            try{
+                Intent in=new Intent(c,BellReceiver.class);
+                in.setAction(actionFor(id,d));
+                PendingIntent pi=PendingIntent.getBroadcast(
+                    c,id*10+d,in,
+                    PendingIntent.FLAG_NO_CREATE|PendingIntent.FLAG_IMMUTABLE
+                );
+                if(pi!=null){ am.cancel(pi); pi.cancel(); }
+
+                Intent backup=new Intent(c,BellReceiver.class);
+                backup.setAction(backupActionFor(id,d));
+                PendingIntent bp=PendingIntent.getBroadcast(
+                    c,id*10+d+200000,backup,
+                    PendingIntent.FLAG_NO_CREATE|PendingIntent.FLAG_IMMUTABLE
+                );
+                if(bp!=null){ am.cancel(bp); bp.cancel(); }
+            }catch(Exception e){
+                Log.w(TAG,"Gagal membatalkan alarm jadwal id="+id+" hari="+d,e);
+            }
+        }
+    }
+
+    static boolean scheduleNextForId(Context c, AlarmManager am, int id){
+        String data=c.getSharedPreferences("schedule",0).getString("data","");
+        if(data.isEmpty())return false;
+
+        String[] target=null;
+        for(String line:data.split("\\n")){
+            try{
+                String[] p=line.split("\\|",-1);
+                if(p.length>=6 && Integer.parseInt(p[0])==id){
+                    target=p;
+                    break;
+                }
+            }catch(Exception ignored){}
+        }
+        if(target==null)return false;
+
+        try{
+            String time=target[1];
+            String[] hm=time.split(":");
+            if(hm.length!=2)return false;
+
+            int hour=Integer.parseInt(hm[0]);
+            int minute=Integer.parseInt(hm[1]);
+            int raw=Integer.parseInt(target[5]);
+            String uri=target[4];
+            int daysMask=target.length>=7?Integer.parseInt(target[6]):31;
+            if(daysMask==0)daysMask=31;
+
+            Calendar now=Calendar.getInstance();
+            Calendar best=null;
+
+            for(int offset=0;offset<7;offset++){
+                Calendar cal=(Calendar)now.clone();
+                cal.add(Calendar.DAY_OF_YEAR,offset);
+
+                int bit=dayBit(cal.get(Calendar.DAY_OF_WEEK));
+                if((daysMask&bit)==0)continue;
+
+                cal.set(Calendar.HOUR_OF_DAY,hour);
+                cal.set(Calendar.MINUTE,minute);
+                cal.set(Calendar.SECOND,0);
+                cal.set(Calendar.MILLISECOND,0);
+
+                if(cal.getTimeInMillis()<=System.currentTimeMillis())continue;
+                if(best==null||cal.before(best))best=cal;
+            }
+
+            if(best==null)return false;
+
+            int dayIndex=(best.get(Calendar.DAY_OF_WEEK)+5)%7;
+            int requestCode=id*10+dayIndex;
+            String alarmKey=id+"_"+best.getTimeInMillis();
+
+            Intent in=new Intent(c,BellReceiver.class);
+            in.setAction(actionFor(id,dayIndex));
+            in.putExtra("alarmId",id);
+            in.putExtra("raw",raw);
+            in.putExtra("uri",uri);
+            in.putExtra("name",target[2]);
+            in.putExtra("time",target[1]);
+            in.putExtra("alarmKey",alarmKey);
+
+            PendingIntent pi=PendingIntent.getBroadcast(
+                c,requestCode,in,
+                PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE
+            );
+
+            if(android.os.Build.VERSION.SDK_INT>=31 && !am.canScheduleExactAlarms()){
+                Log.e(TAG,"Exact alarm permission BELUM diberikan: "+target[2]+" "+target[1]);
+                notifyExactAlarmPermissionRequired(c);
+                return false;
+            }
+
+            Intent showIntent=new Intent(c,MainActivity.class);
+            showIntent.setAction("com.walinet.walibell.OPEN_FROM_ALARM");
+            PendingIntent showPi=PendingIntent.getActivity(
+                c,requestCode+100000,showIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE
+            );
+            AlarmManager.AlarmClockInfo info=
+                new AlarmManager.AlarmClockInfo(best.getTimeInMillis(),showPi);
+
+            try{
+                am.setAlarmClock(info,pi);
+                Log.i(TAG,"PRIMARY AlarmClock terjadwal: "+target[2]+" "+target[1]+" -> "+best.getTime());
+            }catch(SecurityException e){
+                Log.e(TAG,"AlarmClock ditolak",e);
+                return false;
+            }
+
+            Intent backupIn=new Intent(c,BellReceiver.class);
+            backupIn.setAction(backupActionFor(id,dayIndex));
+            backupIn.putExtra("alarmId",id);
+            backupIn.putExtra("raw",raw);
+            backupIn.putExtra("uri",uri);
+            backupIn.putExtra("name",target[2]);
+            backupIn.putExtra("time",target[1]);
+            backupIn.putExtra("alarmKey",alarmKey);
+
+            PendingIntent backupPi=PendingIntent.getBroadcast(
+                c,requestCode+200000,backupIn,
+                PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE
+            );
+
+            try{
+                am.setExactAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,best.getTimeInMillis(),backupPi
+                );
+                Log.i(TAG,"BACKUP ExactAndAllowWhileIdle terjadwal: "+target[2]+" "+target[1]);
+            }catch(SecurityException e){
+                Log.e(TAG,"Backup exact alarm ditolak",e);
+            }
+
+            saveStatus(c,"next_alarm",
+                target[2]+" "+target[1]+" • "+
+                new SimpleDateFormat("dd/MM/yyyy HH:mm:ss",Locale.getDefault()).format(best.getTime()));
+
+            Log.i(TAG,"EXACT ALARM selesai: "+target[2]+" "+target[1]+" -> "+best.getTime());
+            return true;
+        }catch(SecurityException e){
+            Log.e(TAG,"SecurityException saat menjadwalkan id="+id,e);
+            return false;
+        }catch(Exception e){
+            Log.e(TAG,"Gagal menjadwalkan id="+id,e);
+            return false;
+        }
+    }
+
+    static void rescheduleOne(Context c,int id){
+        if(!LicenseManager.isLicensed(c)){
+            cancelAll(c);
+            return;
+        }
+        AlarmManager am=(AlarmManager)c.getSystemService(Context.ALARM_SERVICE);
+        if(am==null)return;
+
+        // Hanya reset alarm milik jadwal ini.
+        cancelScheduleAlarms(c,am,id);
+        scheduleNextForId(c,am,id);
+    }
+
+    public static void cancelAll(Context c){
+        try{
+            AlarmManager am=(AlarmManager)c.getSystemService(Context.ALARM_SERVICE);
+            if(am==null)return;
+            String data=c.getSharedPreferences("schedule",0).getString("data","");
+            if(data.isEmpty())return;
+
+            for(String line:data.split("\\n")){
+                try{
+                    String[] p=line.split("\\|",-1);
+                    if(p.length<6)continue;
+                    cancelScheduleAlarms(c,am,Integer.parseInt(p[0]));
+                }catch(Exception ignored){}
+            }
+        }catch(Exception ignored){}
+    }
+
     public static void rescheduleAll(Context c){
         if(!LicenseManager.isLicensed(c)){
             cancelAll(c);
@@ -187,195 +376,27 @@ public class BellReceiver extends BroadcastReceiver {
         if(am==null)return;
 
         String data=c.getSharedPreferences("schedule",0).getString("data","");
-        if(!data.isEmpty()){
-            // Cancel every previously scheduled weekday instance.
-            for(String line:data.split("\\n")){
-                try{
-                    String[] p=line.split("\\|",-1);
-                    if(p.length<6)continue;
-                    int id=Integer.parseInt(p[0]);
-                    for(int d=0;d<7;d++){
-                        Intent old=new Intent(c,BellReceiver.class);
-                        old.setAction("com.walinet.walibell.BELL_"+id+"_"+d);
-                        PendingIntent pi;
-                        if(android.os.Build.VERSION.SDK_INT>=26){
-                            pi=PendingIntent.getBroadcast(
-                                c,id*10+d,old,
-                                PendingIntent.FLAG_NO_CREATE|PendingIntent.FLAG_IMMUTABLE
-                            );
-                        }else{
-                            pi=PendingIntent.getBroadcast(
-                                c,id*10+d,old,
-                                PendingIntent.FLAG_NO_CREATE|PendingIntent.FLAG_IMMUTABLE
-                            );
-                        }
-                        if(pi!=null){
-                            am.cancel(pi);
-                            pi.cancel();
-                        }
-                        Intent backupOld=new Intent(c,BellReceiver.class);
-                        backupOld.setAction("com.walinet.walibell.BELL_BACKUP_"+id+"_"+d);
-                        PendingIntent backupPi;
-                        if(android.os.Build.VERSION.SDK_INT>=26){
-                            backupPi=PendingIntent.getBroadcast(
-                                c,id*10+d+200000,backupOld,
-                                PendingIntent.FLAG_NO_CREATE|PendingIntent.FLAG_IMMUTABLE
-                            );
-                        }else{
-                            backupPi=PendingIntent.getBroadcast(
-                                c,id*10+d+200000,backupOld,
-                                PendingIntent.FLAG_NO_CREATE|PendingIntent.FLAG_IMMUTABLE
-                            );
-                        }
-                        if(backupPi!=null){
-                            am.cancel(backupPi);
-                            backupPi.cancel();
-                        }
-
-                        // Also cancel legacy backup broadcasts.
-                        Intent legacyBackupOld=new Intent(c,BellReceiver.class);
-                        legacyBackupOld.setAction("com.walinet.walibell.BELL_BACKUP_"+id+"_"+d);
-                        PendingIntent legacyBackupPi=PendingIntent.getBroadcast(
-                            c,id*10+d+200000,legacyBackupOld,
-                            PendingIntent.FLAG_NO_CREATE|PendingIntent.FLAG_IMMUTABLE
-                        );
-                        if(legacyBackupPi!=null){
-                            am.cancel(legacyBackupPi);
-                            legacyBackupPi.cancel();
-                        }
-                    }
-                }catch(Exception e){
-                    Log.w(TAG,"Gagal membatalkan alarm lama",e);
-                }
-            }
-        }
         if(data.isEmpty())return;
 
-        // IMPORTANT: no set(), setInexact(), setAndAllowWhileIdle(), or
-        // repeating/inexact alarm is used here. Each schedule is an exact,
-        // one-shot alarm. The next occurrence is scheduled after it fires.
+        // Dipakai saat aplikasi dibuka, jadwal diedit/ditambah, boot, atau
+        // izin alarm berubah. Semua jadwal boleh dibangun ulang pada kondisi
+        // ini. Yang penting: saat satu alarm berbunyi, rescheduleOne() saja
+        // yang dipanggil sehingga jadwal lain tidak disentuh.
         for(String line:data.split("\\n")){
             try{
                 String[] p=line.split("\\|",-1);
                 if(p.length<6)continue;
+                cancelScheduleAlarms(c,am,Integer.parseInt(p[0]));
+            }catch(Exception ignored){}
+        }
 
-                int id=Integer.parseInt(p[0]);
-                String time=p[1], uri=p[4];
-                int raw=Integer.parseInt(p[5]);
-                int daysMask=p.length>=7?Integer.parseInt(p[6]):31;
-                if(daysMask==0)daysMask=31;
-
-                String[] hm=time.split(":");
-                if(hm.length!=2)continue;
-                int hour=Integer.parseInt(hm[0]);
-                int minute=Integer.parseInt(hm[1]);
-
-                Calendar now=Calendar.getInstance();
-                Calendar best=null;
-
-                for(int offset=0;offset<7;offset++){
-                    Calendar cal=(Calendar)now.clone();
-                    cal.add(Calendar.DAY_OF_YEAR,offset);
-
-                    int bit=dayBit(cal.get(Calendar.DAY_OF_WEEK));
-                    if((daysMask&bit)==0)continue;
-
-                    cal.set(Calendar.HOUR_OF_DAY,hour);
-                    cal.set(Calendar.MINUTE,minute);
-                    cal.set(Calendar.SECOND,0);
-                    cal.set(Calendar.MILLISECOND,0);
-
-                    if(cal.getTimeInMillis()<=System.currentTimeMillis())continue;
-                    if(best==null||cal.before(best))best=cal;
-                }
-
-                if(best==null)continue;
-
-                int dayIndex=(best.get(Calendar.DAY_OF_WEEK)+5)%7;
-                int requestCode=id*10+dayIndex;
-
-                Intent in=new Intent(c,BellReceiver.class);
-                in.setAction("com.walinet.walibell.BELL_"+id+"_"+dayIndex);
-                in.putExtra("raw",raw);
-                in.putExtra("uri",uri);
-                in.putExtra("name",p[2]);
-                in.putExtra("time",p[1]);
-                String alarmKey=id+"_"+best.getTimeInMillis();
-                in.putExtra("alarmKey",alarmKey);
-
-                // IMPORTANT: AlarmManager delivers the exact alarm to the
-                // BroadcastReceiver. The receiver then starts BellService as
-                // a foreground service. This is the documented Android alarm
-                // architecture and is more reliable across OEM/Android 15
-                // implementations than using a Service PendingIntent directly.
-                PendingIntent pi=PendingIntent.getBroadcast(
-                    c,requestCode,in,
-                    PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE
-                );
-
-                saveStatus(c,"next_alarm",
-                    p[2]+" "+p[1]+" • "+new SimpleDateFormat("dd/MM/yyyy HH:mm:ss",Locale.getDefault()).format(best.getTime()));
-
-                if(android.os.Build.VERSION.SDK_INT>=31 && !am.canScheduleExactAlarms()){
-                    Log.e(TAG,"Exact alarm permission BELUM diberikan; alarm tidak dijadwalkan: "+p[2]+" "+p[1]);
-                    notifyExactAlarmPermissionRequired(c);
-                    continue;
-                }
-
-                /*
-                 * PRIMARY PATH: setAlarmClock().
-                 *
-                 * Android documents setAlarmClock() as the most critical
-                 * exact-alarm API: the system does not adjust its delivery
-                 * time and may leave low-power mode to deliver it.
-                 */
-                Intent showIntent=new Intent(c,MainActivity.class);
-                showIntent.setAction("com.walinet.walibell.OPEN_FROM_ALARM");
-                PendingIntent showPi=PendingIntent.getActivity(
-                    c,requestCode+100000,showIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE
-                );
-                AlarmManager.AlarmClockInfo info=
-                    new AlarmManager.AlarmClockInfo(best.getTimeInMillis(),showPi);
-
-                // PRIMARY: AlarmClock is the most visible exact alarm and may
-                // wake the device from low-power idle.
-                try{
-                    am.setAlarmClock(info,pi);
-                    Log.i(TAG,"PRIMARY AlarmClock terjadwal: "+p[2]+" "+p[1]+" -> "+best.getTime());
-                }catch(SecurityException e){
-                    Log.e(TAG,"AlarmClock ditolak; mencoba backup setExactAndAllowWhileIdle",e);
-                }
-
-                // BACKUP: use a separate PendingIntent so the fallback can
-                // coexist with the primary. BellReceiver de-duplicates both
-                // deliveries using alarmKey.
-                Intent backupIn=new Intent(c,BellReceiver.class);
-                backupIn.setAction("com.walinet.walibell.BELL_BACKUP_"+id+"_"+dayIndex);
-                backupIn.putExtra("raw",raw);
-                backupIn.putExtra("uri",uri);
-                backupIn.putExtra("name",p[2]);
-                backupIn.putExtra("time",p[1]);
-                backupIn.putExtra("alarmKey",alarmKey);
-                PendingIntent backupPi=PendingIntent.getBroadcast(
-                    c,requestCode+200000,backupIn,
-                    PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE
-                );
-                try{
-                    am.setExactAndAllowWhileIdle(
-                        AlarmManager.RTC_WAKEUP,best.getTimeInMillis(),backupPi
-                    );
-                    Log.i(TAG,"BACKUP ExactAndAllowWhileIdle terjadwal: "+p[2]+" "+p[1]);
-                }catch(SecurityException e){
-                    Log.e(TAG,"Backup exact alarm ditolak",e);
-                }
-
-                Log.i(TAG,"EXACT ALARM selesai dijadwalkan: "+p[2]+" "+p[1]+" -> "+best.getTime());
-            }catch(SecurityException e){
-                Log.e(TAG,"SecurityException saat menjadwalkan exact alarm",e);
-            }catch(Exception e){
-                Log.e(TAG,"Gagal menjadwalkan exact alarm",e);
-            }
+        for(String line:data.split("\\n")){
+            try{
+                String[] p=line.split("\\|",-1);
+                if(p.length<6)continue;
+                scheduleNextForId(c,am,Integer.parseInt(p[0]));
+            }catch(Exception ignored){}
         }
     }
+
 }
