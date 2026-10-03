@@ -3,17 +3,57 @@ package com.walinet.walibell;
 import android.app.*;
 import android.content.*;
 import android.util.Log;
+import android.os.PowerManager;
 import java.util.*;
 import java.text.SimpleDateFormat;
 
 public class BellReceiver extends BroadcastReceiver {
     private static final String TAG = "WaliBellAlarm";
 
+    // Bridge WakeLock: menjembatani jeda antara onReceive() selesai
+    // (wake-lock broadcast dilepas oleh sistem) dan BellService.play()
+    // memperoleh WakeLock-nya sendiri. Tanpa ini, pada HP yang terkunci /
+    // Doze, CPU bisa tidur di jeda tersebut sehingga bel tidak bunyi.
+    // Timeout 60 detik sebagai pengaman bila service gagal mengambil alih.
+    private static PowerManager.WakeLock bridgeLock;
+
+    static void acquireBridgeLock(Context c){
+        try{
+            PowerManager pm=(PowerManager)c.getSystemService(Context.POWER_SERVICE);
+            if(pm==null)return;
+            synchronized(BellReceiver.class){
+                if(bridgeLock==null){
+                    bridgeLock=pm.newWakeLock(
+                        PowerManager.PARTIAL_WAKE_LOCK,"WaliBell::AlarmBridge");
+                    bridgeLock.setReferenceCounted(false);
+                }
+                if(!bridgeLock.isHeld())bridgeLock.acquire(60_000L);
+            }
+            Log.i(TAG,"Bridge WakeLock diperoleh (60 dtk)");
+        }catch(Exception e){
+            Log.e(TAG,"Gagal memperoleh bridge WakeLock",e);
+        }
+    }
+
+    static void releaseBridgeLock(){
+        try{
+            synchronized(BellReceiver.class){
+                if(bridgeLock!=null&&bridgeLock.isHeld())bridgeLock.release();
+            }
+        }catch(Exception e){
+            Log.e(TAG,"Gagal melepas bridge WakeLock",e);
+        }
+    }
+
     @Override public void onReceive(Context c, Intent i){
         if(!LicenseManager.isLicensed(c)){
             cancelAll(c);
             return;
         }
+
+        // Tahan CPU tetap menyala sampai BellService mengambil alih.
+        // Kunci dilepas di BellService.play() (atau otomatis 60 dtk).
+        acquireBridgeLock(c);
 
         int raw=i.getIntExtra("raw",0);
         String uri=i.getStringExtra("uri");

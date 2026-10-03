@@ -21,7 +21,7 @@ public class BootReceiver extends BroadcastReceiver {
             }
 
             // Rebuild the one-shot exact alarm after reboot, app replacement,
-            // timezone/time changes handled elsewhere, or permission grant.
+            // time/timezone changes, or permission grant.
             BellReceiver.rescheduleAll(c);
 
             /*

@@ -111,6 +111,8 @@ public class BellService extends Service {
     void play(int raw,String uri){
         try{
             acquireWakeLock();
+            // Service sudah memegang WakeLock sendiri; bridge tidak diperlukan lagi.
+            BellReceiver.releaseBridgeLock();
 
             if(player!=null){
                 try{player.stop();}catch(Exception ignored){}
@@ -155,6 +157,7 @@ public class BellService extends Service {
             }
         }catch(Exception e){
             releaseWakeLock();
+            BellReceiver.releaseBridgeLock();
             saveStatus("last_error", "Gagal memutar bel: " + e.getClass().getSimpleName() + " - " + e.getMessage());
             Log.e(TAG,"Gagal memutar bel",e);
         }
